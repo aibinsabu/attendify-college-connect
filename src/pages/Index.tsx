@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { 
-  UserCircle, Users, BookOpen, Bus, ChevronRight
+  UserCircle, Users, BookOpen, Bus, ChevronRight, QrCode, Camera, Search
 } from 'lucide-react';
 
 const roleData = [

@@ -1,6 +1,6 @@
 
 import React, { useState, useRef } from 'react';
-import { Camera, QrCode, Barcode, Upload } from 'lucide-react';
+import { Camera, QrCode, Barcode, Upload, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
