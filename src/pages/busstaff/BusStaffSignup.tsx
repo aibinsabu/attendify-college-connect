@@ -35,7 +35,13 @@ const BusStaffSignup = () => {
     setIsLoading(true);
     
     try {
-      const success = await signup(name, email, password, 'busstaff');
+      const success = await signup({
+        name,
+        email,
+        password,
+        role: 'busstaff'
+      });
+      
       if (success) {
         navigate('/busstaff/dashboard');
       }

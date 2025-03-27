@@ -35,7 +35,14 @@ const FacultySignup = () => {
     setIsLoading(true);
     
     try {
-      const success = await signup(name, email, password, 'faculty');
+      const success = await signup({
+        name,
+        email,
+        password,
+        role: 'faculty',
+        department
+      });
+      
       if (success) {
         navigate('/faculty/dashboard');
       }

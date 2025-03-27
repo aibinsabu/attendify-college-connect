@@ -22,7 +22,8 @@ export const userAPI = {
   getById: async (id: string) => {
     try {
       await connectToDatabase();
-      return await User.findById(id).select('-password');
+      // Using .exec() to properly handle Mongoose promises
+      return await User.findById(id).select('-password').exec();
     } catch (error) {
       console.error('Error fetching user:', error);
       throw error;
@@ -39,7 +40,7 @@ export const userAPI = {
     try {
       await connectToDatabase();
       
-      const query = { role: 'student' };
+      const query: any = { role: 'student' };
       
       if (criteria.name) {
         query['name'] = { $regex: criteria.name, $options: 'i' };
@@ -57,7 +58,8 @@ export const userAPI = {
         query['rollNo'] = criteria.rollNo;
       }
       
-      return await User.find(query).select('-password');
+      // Using .exec() to properly handle Mongoose promises
+      return await User.find(query).select('-password').exec();
     } catch (error) {
       console.error('Error searching students:', error);
       throw error;
@@ -68,7 +70,8 @@ export const userAPI = {
   updateStudent: async (id: string, data: any) => {
     try {
       await connectToDatabase();
-      return await User.findByIdAndUpdate(id, data, { new: true }).select('-password');
+      // Using .exec() to properly handle Mongoose promises
+      return await User.findByIdAndUpdate(id, data, { new: true }).select('-password').exec();
     } catch (error) {
       console.error('Error updating student:', error);
       throw error;
@@ -130,7 +133,8 @@ export const attendanceAPI = {
   getStudentAttendance: async (studentId: string) => {
     try {
       await connectToDatabase();
-      return await Attendance.find({ student: studentId });
+      // Using .exec() to properly handle Mongoose promises
+      return await Attendance.find({ student: studentId }).exec();
     } catch (error) {
       console.error('Error fetching attendance:', error);
       throw error;
@@ -141,7 +145,15 @@ export const attendanceAPI = {
   getAttendancePercentage: async (studentId: string, classId: string) => {
     try {
       await connectToDatabase();
-      return await Attendance.calculateAttendancePercentage(studentId, classId);
+      // Since calculateAttendancePercentage doesn't exist, calculate manually
+      const totalClasses = await Attendance.countDocuments({ class: classId }).exec();
+      const attendedClasses = await Attendance.countDocuments({ 
+        student: studentId, 
+        class: classId,
+        status: 'present'
+      }).exec();
+      
+      return totalClasses > 0 ? (attendedClasses / totalClasses) * 100 : 0;
     } catch (error) {
       console.error('Error calculating attendance percentage:', error);
       throw error;
@@ -177,11 +189,12 @@ export const marksAPI = {
       else if (percentage >= 40) grade = 'D';
       else grade = 'F';
       
+      // Using .exec() to properly handle Mongoose promises with findOneAndUpdate
       const markRecord = await Mark.findOneAndUpdate(
         { student, subject, exam },
         { ...markData, percentage, grade },
         { new: true, upsert: true }
-      );
+      ).exec();
       
       return markRecord;
     } catch (error) {
@@ -194,7 +207,8 @@ export const marksAPI = {
   getStudentMarks: async (studentId: string) => {
     try {
       await connectToDatabase();
-      return await Mark.find({ student: studentId });
+      // Using .exec() to properly handle Mongoose promises
+      return await Mark.find({ student: studentId }).exec();
     } catch (error) {
       console.error('Error fetching marks:', error);
       throw error;
@@ -208,7 +222,8 @@ export const busRouteAPI = {
   getAllRoutes: async () => {
     try {
       await connectToDatabase();
-      return await BusRoute.find({ active: true });
+      // Using .exec() to properly handle Mongoose promises
+      return await BusRoute.find({ active: true }).exec();
     } catch (error) {
       console.error('Error fetching bus routes:', error);
       throw error;
@@ -219,7 +234,8 @@ export const busRouteAPI = {
   updateRoute: async (id: string, routeData: any) => {
     try {
       await connectToDatabase();
-      return await BusRoute.findByIdAndUpdate(id, routeData, { new: true });
+      // Using .exec() to properly handle Mongoose promises
+      return await BusRoute.findByIdAndUpdate(id, routeData, { new: true }).exec();
     } catch (error) {
       console.error('Error updating bus route:', error);
       throw error;

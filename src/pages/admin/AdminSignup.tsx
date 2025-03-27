@@ -28,7 +28,13 @@ const AdminSignup = () => {
     setIsLoading(true);
     
     try {
-      const success = await signup(name, email, password, 'admin');
+      const success = await signup({
+        name,
+        email,
+        password,
+        role: 'admin'
+      });
+      
       if (success) {
         navigate('/admin/dashboard');
       }

@@ -36,7 +36,15 @@ const StudentSignup = () => {
     setIsLoading(true);
     
     try {
-      const success = await signup(name, email, password, 'student');
+      const success = await signup({
+        name,
+        email,
+        password,
+        role: 'student',
+        studentClass,
+        batch
+      });
+      
       if (success) {
         navigate('/student/dashboard');
       }
