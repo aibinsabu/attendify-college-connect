@@ -22,8 +22,9 @@ class APIHandler {
           const { email, password, role } = body;
           
           // Find user in database
-          // Use toObject() for Mongoose document conversion
-          const user = await User.findOne({ email, role }).lean().exec();
+          // Use a different approach to fix the TypeScript error
+          const userQuery = User.findOne({ email, role });
+          const user = await userQuery.lean().exec();
           
           if (!user) {
             return new Response(
@@ -79,7 +80,8 @@ class APIHandler {
           const { email, password, role } = body;
           
           // Check if user already exists
-          const existingUser = await User.findOne({ email }).lean().exec();
+          const userQuery = User.findOne({ email });
+          const existingUser = await userQuery.lean().exec();
           
           if (existingUser) {
             return new Response(

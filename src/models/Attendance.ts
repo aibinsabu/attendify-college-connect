@@ -63,6 +63,15 @@ attendanceSchema.statics.calculateAttendancePercentage = async function(studentI
 };
 
 // Create and export the Attendance model
-export const Attendance = mongoose.models.Attendance || mongoose.model('Attendance', attendanceSchema);
+// Fix the model creation to prevent errors
+let Attendance;
+try {
+  // Check if the model already exists to prevent recompilation error
+  Attendance = mongoose.model('Attendance');
+} catch (error) {
+  // Model doesn't exist yet, so create it
+  Attendance = mongoose.model('Attendance', attendanceSchema);
+}
 
+export { Attendance };
 export default Attendance;

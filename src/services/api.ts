@@ -23,7 +23,7 @@ export const userAPI = {
     try {
       await connectToDatabase();
       // Use lean() for better performance and proper typing
-      return await User.findById(id).select('-password').lean().exec();
+      return await User.findById(id).select('-password').lean();
     } catch (error) {
       console.error('Error fetching user:', error);
       throw error;
@@ -59,7 +59,7 @@ export const userAPI = {
       }
       
       // Using lean() for better performance and proper typing
-      return await User.find(query).select('-password').lean().exec();
+      return await User.find(query).select('-password').lean();
     } catch (error) {
       console.error('Error searching students:', error);
       throw error;
@@ -75,7 +75,7 @@ export const userAPI = {
         id, 
         data, 
         { new: true }
-      ).select('-password').lean().exec();
+      ).select('-password').lean();
     } catch (error) {
       console.error('Error updating student:', error);
       throw error;
@@ -137,8 +137,8 @@ export const attendanceAPI = {
   getStudentAttendance: async (studentId: string) => {
     try {
       await connectToDatabase();
-      // Using lean() for better performance and proper typing
-      return await Attendance.find({ student: studentId }).lean().exec();
+      // Using lean() for better performance
+      return await Attendance.find({ student: studentId }).lean();
     } catch (error) {
       console.error('Error fetching attendance:', error);
       throw error;
@@ -150,12 +150,12 @@ export const attendanceAPI = {
     try {
       await connectToDatabase();
       // Calculate manually since we're not using the static method
-      const totalClasses = await Attendance.countDocuments({ class: classId }).exec();
+      const totalClasses = await Attendance.countDocuments({ class: classId });
       const attendedClasses = await Attendance.countDocuments({ 
         student: studentId, 
         class: classId,
         status: 'present'
-      }).exec();
+      });
       
       return totalClasses > 0 ? (attendedClasses / totalClasses) * 100 : 0;
     } catch (error) {
@@ -193,12 +193,12 @@ export const marksAPI = {
       else if (percentage >= 40) grade = 'D';
       else grade = 'F';
       
-      // Update the approach for findOneAndUpdate
+      // Update approach to fix TypeScript error
       const markRecord = await Mark.findOneAndUpdate(
         { student, subject, exam },
         { ...markData, percentage, grade },
         { new: true, upsert: true }
-      ).lean().exec();
+      ).lean();
       
       return markRecord;
     } catch (error) {
@@ -211,8 +211,8 @@ export const marksAPI = {
   getStudentMarks: async (studentId: string) => {
     try {
       await connectToDatabase();
-      // Using lean() for better performance and proper typing
-      return await Mark.find({ student: studentId }).lean().exec();
+      // Using lean() for better performance
+      return await Mark.find({ student: studentId }).lean();
     } catch (error) {
       console.error('Error fetching marks:', error);
       throw error;
@@ -226,8 +226,8 @@ export const busRouteAPI = {
   getAllRoutes: async () => {
     try {
       await connectToDatabase();
-      // Using lean() for better performance and proper typing
-      return await BusRoute.find({ active: true }).lean().exec();
+      // Using lean() for better performance
+      return await BusRoute.find({ active: true }).lean();
     } catch (error) {
       console.error('Error fetching bus routes:', error);
       throw error;
@@ -238,12 +238,12 @@ export const busRouteAPI = {
   updateRoute: async (id: string, routeData: any) => {
     try {
       await connectToDatabase();
-      // Using lean() for better performance and proper typing
+      // Using lean() for better performance
       return await BusRoute.findByIdAndUpdate(
         id, 
         routeData, 
         { new: true }
-      ).lean().exec();
+      ).lean();
     } catch (error) {
       console.error('Error updating bus route:', error);
       throw error;

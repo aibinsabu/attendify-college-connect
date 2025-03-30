@@ -61,7 +61,16 @@ const userSchema = new mongoose.Schema({
   }
 });
 
-// Create and export the User model
-export const User = mongoose.models.User || mongoose.model('User', userSchema);
+// Create the User model
+// Fix: Using a safer approach to prevent model redefinition errors
+let User;
+try {
+  // Check if the model already exists to prevent recompilation error
+  User = mongoose.model('User');
+} catch (error) {
+  // Model doesn't exist yet, so create it
+  User = mongoose.model('User', userSchema);
+}
 
+export { User };
 export default User;

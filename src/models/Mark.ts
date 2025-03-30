@@ -1,7 +1,7 @@
 
 import mongoose from 'mongoose';
 
-// Define the marks schema
+// Define the mark schema
 const markSchema = new mongoose.Schema({
   student: {
     type: mongoose.Schema.Types.ObjectId,
@@ -28,7 +28,10 @@ const markSchema = new mongoose.Schema({
     type: Number,
     required: true
   },
-  grade: String,
+  grade: {
+    type: String,
+    required: true
+  },
   remarks: String,
   addedBy: {
     type: mongoose.Schema.Types.ObjectId,
@@ -45,10 +48,18 @@ const markSchema = new mongoose.Schema({
   }
 });
 
-// Create a composite index for student, subject, and exam
+// Create composite index for unique mark records per student per subject per exam
 markSchema.index({ student: 1, subject: 1, exam: 1 }, { unique: true });
 
-// Create and export the Mark model
-export const Mark = mongoose.models.Mark || mongoose.model('Mark', markSchema);
+// Create and export the Mark model using the safe approach
+let Mark;
+try {
+  // Check if the model already exists to prevent recompilation error
+  Mark = mongoose.model('Mark');
+} catch (error) {
+  // Model doesn't exist yet, so create it
+  Mark = mongoose.model('Mark', markSchema);
+}
 
+export { Mark };
 export default Mark;
