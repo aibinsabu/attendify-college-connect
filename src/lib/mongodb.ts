@@ -1,12 +1,12 @@
 
-import mongoose from 'mongoose';
+import { connect, connection, Connection } from 'mongoose';
 import { toast } from 'sonner';
 
 const MONGODB_URI = 'mongodb://localhost:27017/college_management';
 
 // Global variable to track connection status
 let isConnected = false;
-let dbConnection: mongoose.Connection | null = null;
+let dbConnection: Connection | null = null;
 
 export async function connectToDatabase() {
   if (isConnected && dbConnection) {
@@ -15,15 +15,15 @@ export async function connectToDatabase() {
   }
 
   try {
-    // Attempt to connect to MongoDB
-    const connection = await mongoose.connect(MONGODB_URI, {
+    // Attempt to connect to MongoDB using the correct import
+    await connect(MONGODB_URI, {
       // These options help with connection stability
       serverSelectionTimeoutMS: 5000,
       retryWrites: true
     });
     
     // Get the default connection
-    dbConnection = connection.connection;
+    dbConnection = connection;
     
     // Set up connection event handlers
     dbConnection.on('connected', () => {

@@ -1,10 +1,10 @@
-import mongoose from 'mongoose';
-import { getDbConnection } from '@/lib/mongodb';
+
+import { Schema, model, models, Model } from 'mongoose';
 
 // Define the mark schema
-const markSchema = new mongoose.Schema({
+const markSchema = new Schema({
   student: {
-    type: mongoose.Schema.Types.ObjectId,
+    type: Schema.Types.ObjectId,
     ref: 'User',
     required: true
   },
@@ -34,7 +34,7 @@ const markSchema = new mongoose.Schema({
   },
   remarks: String,
   addedBy: {
-    type: mongoose.Schema.Types.ObjectId,
+    type: Schema.Types.ObjectId,
     ref: 'User',
     required: true
   },
@@ -51,23 +51,8 @@ const markSchema = new mongoose.Schema({
 // Create composite index for unique mark records per student per subject per exam
 markSchema.index({ student: 1, subject: 1, exam: 1 }, { unique: true });
 
-// Create and export the Mark model using the safe approach
-let Mark;
-try {
-  // Check if the model already exists
-  if (mongoose.models && mongoose.models.Mark) {
-    Mark = mongoose.models.Mark;
-  } else {
-    // Get the connection - if not connected yet, will use default connection
-    const conn = getDbConnection() || mongoose.connection;
-    // Model doesn't exist yet, so create it
-    Mark = conn.model('Mark', markSchema);
-  }
-} catch (error) {
-  console.error("Error creating Mark model:", error);
-  // Fallback - create the model on default connection
-  Mark = mongoose.model('Mark', markSchema);
-}
+// Create and export the Mark model
+const Mark: Model<any> = models.Mark || model('Mark', markSchema);
 
 export { Mark };
 export default Mark;

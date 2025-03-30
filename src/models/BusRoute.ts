@@ -1,8 +1,8 @@
-import mongoose from 'mongoose';
-import { getDbConnection } from '@/lib/mongodb';
+
+import { Schema, model, models, Model } from 'mongoose';
 
 // Define the bus route schema
-const busRouteSchema = new mongoose.Schema({
+const busRouteSchema = new Schema({
   routeName: {
     type: String,
     required: true,
@@ -46,7 +46,7 @@ const busRouteSchema = new mongoose.Schema({
     required: true
   },
   assignedStudents: [{
-    type: mongoose.Schema.Types.ObjectId,
+    type: Schema.Types.ObjectId,
     ref: 'User'
   }],
   createdAt: {
@@ -59,23 +59,8 @@ const busRouteSchema = new mongoose.Schema({
   }
 });
 
-// Create and export the BusRoute model using the safe approach
-let BusRoute;
-try {
-  // Check if the model already exists
-  if (mongoose.models && mongoose.models.BusRoute) {
-    BusRoute = mongoose.models.BusRoute;
-  } else {
-    // Get the connection - if not connected yet, will use default connection
-    const conn = getDbConnection() || mongoose.connection;
-    // Model doesn't exist yet, so create it
-    BusRoute = conn.model('BusRoute', busRouteSchema);
-  }
-} catch (error) {
-  console.error("Error creating BusRoute model:", error);
-  // Fallback - create the model on default connection
-  BusRoute = mongoose.model('BusRoute', busRouteSchema);
-}
+// Create and export the BusRoute model
+const BusRoute: Model<any> = models.BusRoute || model('BusRoute', busRouteSchema);
 
 export { BusRoute };
 export default BusRoute;

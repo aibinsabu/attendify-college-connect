@@ -1,11 +1,10 @@
 
-import mongoose from 'mongoose';
-import { getDbConnection } from '@/lib/mongodb';
+import { Schema, model, models, Model } from 'mongoose';
 
 // Define the attendance schema
-const attendanceSchema = new mongoose.Schema({
+const attendanceSchema = new Schema({
   student: {
-    type: mongoose.Schema.Types.ObjectId,
+    type: Schema.Types.ObjectId,
     ref: 'User',
     required: true
   },
@@ -28,7 +27,7 @@ const attendanceSchema = new mongoose.Schema({
     required: true
   },
   markedBy: {
-    type: mongoose.Schema.Types.ObjectId,
+    type: Schema.Types.ObjectId,
     ref: 'User'
   },
   markedAt: {
@@ -64,22 +63,7 @@ attendanceSchema.statics.calculateAttendancePercentage = async function(studentI
 };
 
 // Create and export the Attendance model
-let Attendance;
-try {
-  // Check if the model already exists
-  if (mongoose.models && mongoose.models.Attendance) {
-    Attendance = mongoose.models.Attendance;
-  } else {
-    // Get the connection - if not connected yet, will use default connection
-    const conn = getDbConnection() || mongoose.connection;
-    // Model doesn't exist yet, so create it
-    Attendance = conn.model('Attendance', attendanceSchema);
-  }
-} catch (error) {
-  console.error("Error creating Attendance model:", error);
-  // Fallback - create the model on default connection
-  Attendance = mongoose.model('Attendance', attendanceSchema);
-}
+const Attendance: Model<any> = models.Attendance || model('Attendance', attendanceSchema);
 
 export { Attendance };
 export default Attendance;
