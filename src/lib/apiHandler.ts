@@ -22,8 +22,8 @@ class APIHandler {
           const { email, password, role } = body;
           
           // Find user in database
-          // We need to use .exec() for proper promise resolution in Mongoose
-          const user = await User.findOne({ email, role }).exec();
+          // Use toObject() for Mongoose document conversion
+          const user = await User.findOne({ email, role }).lean().exec();
           
           if (!user) {
             return new Response(
@@ -79,8 +79,7 @@ class APIHandler {
           const { email, password, role } = body;
           
           // Check if user already exists
-          // We need to use .exec() for proper promise resolution in Mongoose
-          const existingUser = await User.findOne({ email }).exec();
+          const existingUser = await User.findOne({ email }).lean().exec();
           
           if (existingUser) {
             return new Response(

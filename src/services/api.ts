@@ -22,8 +22,8 @@ export const userAPI = {
   getById: async (id: string) => {
     try {
       await connectToDatabase();
-      // Using .exec() to properly handle Mongoose promises
-      return await User.findById(id).select('-password').exec();
+      // Use lean() for better performance and proper typing
+      return await User.findById(id).select('-password').lean().exec();
     } catch (error) {
       console.error('Error fetching user:', error);
       throw error;
@@ -58,8 +58,8 @@ export const userAPI = {
         query['rollNo'] = criteria.rollNo;
       }
       
-      // Using .exec() to properly handle Mongoose promises
-      return await User.find(query).select('-password').exec();
+      // Using lean() for better performance and proper typing
+      return await User.find(query).select('-password').lean().exec();
     } catch (error) {
       console.error('Error searching students:', error);
       throw error;
@@ -70,8 +70,12 @@ export const userAPI = {
   updateStudent: async (id: string, data: any) => {
     try {
       await connectToDatabase();
-      // Using .exec() to properly handle Mongoose promises
-      return await User.findByIdAndUpdate(id, data, { new: true }).select('-password').exec();
+      // Using lean() for better performance and proper typing
+      return await User.findByIdAndUpdate(
+        id, 
+        data, 
+        { new: true }
+      ).select('-password').lean().exec();
     } catch (error) {
       console.error('Error updating student:', error);
       throw error;
@@ -133,8 +137,8 @@ export const attendanceAPI = {
   getStudentAttendance: async (studentId: string) => {
     try {
       await connectToDatabase();
-      // Using .exec() to properly handle Mongoose promises
-      return await Attendance.find({ student: studentId }).exec();
+      // Using lean() for better performance and proper typing
+      return await Attendance.find({ student: studentId }).lean().exec();
     } catch (error) {
       console.error('Error fetching attendance:', error);
       throw error;
@@ -145,7 +149,7 @@ export const attendanceAPI = {
   getAttendancePercentage: async (studentId: string, classId: string) => {
     try {
       await connectToDatabase();
-      // Since calculateAttendancePercentage doesn't exist, calculate manually
+      // Calculate manually since we're not using the static method
       const totalClasses = await Attendance.countDocuments({ class: classId }).exec();
       const attendedClasses = await Attendance.countDocuments({ 
         student: studentId, 
@@ -189,12 +193,12 @@ export const marksAPI = {
       else if (percentage >= 40) grade = 'D';
       else grade = 'F';
       
-      // Using .exec() to properly handle Mongoose promises with findOneAndUpdate
+      // Update the approach for findOneAndUpdate
       const markRecord = await Mark.findOneAndUpdate(
         { student, subject, exam },
         { ...markData, percentage, grade },
         { new: true, upsert: true }
-      ).exec();
+      ).lean().exec();
       
       return markRecord;
     } catch (error) {
@@ -207,8 +211,8 @@ export const marksAPI = {
   getStudentMarks: async (studentId: string) => {
     try {
       await connectToDatabase();
-      // Using .exec() to properly handle Mongoose promises
-      return await Mark.find({ student: studentId }).exec();
+      // Using lean() for better performance and proper typing
+      return await Mark.find({ student: studentId }).lean().exec();
     } catch (error) {
       console.error('Error fetching marks:', error);
       throw error;
@@ -222,8 +226,8 @@ export const busRouteAPI = {
   getAllRoutes: async () => {
     try {
       await connectToDatabase();
-      // Using .exec() to properly handle Mongoose promises
-      return await BusRoute.find({ active: true }).exec();
+      // Using lean() for better performance and proper typing
+      return await BusRoute.find({ active: true }).lean().exec();
     } catch (error) {
       console.error('Error fetching bus routes:', error);
       throw error;
@@ -234,8 +238,12 @@ export const busRouteAPI = {
   updateRoute: async (id: string, routeData: any) => {
     try {
       await connectToDatabase();
-      // Using .exec() to properly handle Mongoose promises
-      return await BusRoute.findByIdAndUpdate(id, routeData, { new: true }).exec();
+      // Using lean() for better performance and proper typing
+      return await BusRoute.findByIdAndUpdate(
+        id, 
+        routeData, 
+        { new: true }
+      ).lean().exec();
     } catch (error) {
       console.error('Error updating bus route:', error);
       throw error;

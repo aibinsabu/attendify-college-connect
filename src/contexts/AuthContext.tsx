@@ -19,21 +19,23 @@ interface User {
   rollNo?: string;
 }
 
+interface SignupData {
+  name: string;
+  email: string;
+  password: string;
+  role: UserRole;
+  department?: string;
+  studentClass?: string;
+  batch?: string;
+  rollNo?: string;
+}
+
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string, role: UserRole) => Promise<boolean>;
-  signup: (userData: {
-    name: string;
-    email: string;
-    password: string;
-    role: UserRole;
-    department?: string;
-    studentClass?: string;
-    batch?: string;
-    rollNo?: string;
-  }) => Promise<boolean>;
+  signup: (userData: SignupData) => Promise<boolean>;
   logout: () => void;
 }
 
@@ -129,16 +131,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const signup = async (userData: {
-    name: string;
-    email: string;
-    password: string;
-    role: UserRole;
-    department?: string;
-    studentClass?: string;
-    batch?: string;
-    rollNo?: string;
-  }): Promise<boolean> => {
+  const signup = async (userData: SignupData): Promise<boolean> => {
     setIsLoading(true);
     
     try {
