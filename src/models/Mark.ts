@@ -1,5 +1,5 @@
-
 import mongoose from 'mongoose';
+import { getDbConnection } from '@/lib/mongodb';
 
 // Define the mark schema
 const markSchema = new mongoose.Schema({
@@ -57,15 +57,15 @@ try {
   // Check if the model already exists
   if (mongoose.models && mongoose.models.Mark) {
     Mark = mongoose.models.Mark;
-  } else if (mongoose.connection.models && mongoose.connection.models.Mark) {
-    Mark = mongoose.connection.models.Mark;
   } else {
+    // Get the connection - if not connected yet, will use default connection
+    const conn = getDbConnection() || mongoose.connection;
     // Model doesn't exist yet, so create it
-    Mark = mongoose.connection.model('Mark', markSchema);
+    Mark = conn.model('Mark', markSchema);
   }
 } catch (error) {
   console.error("Error creating Mark model:", error);
-  // Fallback - create the model but it might not be connected to the DB
+  // Fallback - create the model on default connection
   Mark = mongoose.model('Mark', markSchema);
 }
 

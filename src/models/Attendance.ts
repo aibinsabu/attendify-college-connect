@@ -1,5 +1,6 @@
 
 import mongoose from 'mongoose';
+import { getDbConnection } from '@/lib/mongodb';
 
 // Define the attendance schema
 const attendanceSchema = new mongoose.Schema({
@@ -68,15 +69,15 @@ try {
   // Check if the model already exists
   if (mongoose.models && mongoose.models.Attendance) {
     Attendance = mongoose.models.Attendance;
-  } else if (mongoose.connection.models && mongoose.connection.models.Attendance) {
-    Attendance = mongoose.connection.models.Attendance;
   } else {
+    // Get the connection - if not connected yet, will use default connection
+    const conn = getDbConnection() || mongoose.connection;
     // Model doesn't exist yet, so create it
-    Attendance = mongoose.connection.model('Attendance', attendanceSchema);
+    Attendance = conn.model('Attendance', attendanceSchema);
   }
 } catch (error) {
   console.error("Error creating Attendance model:", error);
-  // Fallback - create the model but it might not be connected to the DB
+  // Fallback - create the model on default connection
   Attendance = mongoose.model('Attendance', attendanceSchema);
 }
 

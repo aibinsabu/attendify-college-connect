@@ -1,5 +1,5 @@
-
 import mongoose from 'mongoose';
+import { getDbConnection } from '@/lib/mongodb';
 
 // Define the bus route schema
 const busRouteSchema = new mongoose.Schema({
@@ -65,15 +65,15 @@ try {
   // Check if the model already exists
   if (mongoose.models && mongoose.models.BusRoute) {
     BusRoute = mongoose.models.BusRoute;
-  } else if (mongoose.connection.models && mongoose.connection.models.BusRoute) {
-    BusRoute = mongoose.connection.models.BusRoute;
   } else {
+    // Get the connection - if not connected yet, will use default connection
+    const conn = getDbConnection() || mongoose.connection;
     // Model doesn't exist yet, so create it
-    BusRoute = mongoose.connection.model('BusRoute', busRouteSchema);
+    BusRoute = conn.model('BusRoute', busRouteSchema);
   }
 } catch (error) {
   console.error("Error creating BusRoute model:", error);
-  // Fallback - create the model but it might not be connected to the DB
+  // Fallback - create the model on default connection
   BusRoute = mongoose.model('BusRoute', busRouteSchema);
 }
 

@@ -1,5 +1,6 @@
 
 import mongoose from 'mongoose';
+import { getDbConnection } from '@/lib/mongodb';
 
 export type UserRole = 'admin' | 'faculty' | 'student' | 'busstaff';
 
@@ -67,15 +68,15 @@ try {
   // Check if the model already exists
   if (mongoose.models && mongoose.models.User) {
     User = mongoose.models.User;
-  } else if (mongoose.connection.models && mongoose.connection.models.User) {
-    User = mongoose.connection.models.User;
   } else {
+    // Get the connection - if not connected yet, will use default connection
+    const conn = getDbConnection() || mongoose.connection;
     // Model doesn't exist yet, so create it
-    User = mongoose.connection.model('User', userSchema);
+    User = conn.model('User', userSchema);
   }
 } catch (error) {
   console.error("Error creating User model:", error);
-  // Fallback - create the model but it might not be connected to the DB
+  // Fallback - create the model on default connection
   User = mongoose.model('User', userSchema);
 }
 

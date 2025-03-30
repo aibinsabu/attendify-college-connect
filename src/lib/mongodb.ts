@@ -6,36 +6,40 @@ const MONGODB_URI = 'mongodb://localhost:27017/college_management';
 
 // Global variable to track connection status
 let isConnected = false;
+// Create a shared connection variable
+let dbConnection: mongoose.Connection | null = null;
 
 export async function connectToDatabase() {
-  if (isConnected) {
+  if (isConnected && dbConnection) {
     console.log('Using existing database connection');
-    return;
+    return dbConnection;
   }
 
   try {
-    // Fix: Use createConnection or connection.openUri instead of connect directly
-    const db = await mongoose.createConnection(MONGODB_URI).asPromise();
+    // Create a new connection
+    await mongoose.connect(MONGODB_URI);
+    
+    // Get the default connection
+    dbConnection = mongoose.connection;
     
     isConnected = true;
     console.log('New database connection established');
     
     // Set up connection event handlers
-    db.on('error', (err) => {
+    dbConnection.on('error', (err) => {
       console.error('MongoDB connection error:', err);
       toast.error('Database connection error');
       isConnected = false;
+      dbConnection = null;
     });
     
-    db.on('disconnected', () => {
+    dbConnection.on('disconnected', () => {
       console.log('MongoDB disconnected');
       isConnected = false;
+      dbConnection = null;
     });
     
-    // Set the default connection
-    mongoose.connection = db;
-    
-    return db;
+    return dbConnection;
   } catch (error) {
     console.error('Database connection error:', error);
     toast.error('Failed to connect to database');
@@ -45,4 +49,8 @@ export async function connectToDatabase() {
 
 export function getConnectionStatus() {
   return isConnected;
+}
+
+export function getDbConnection() {
+  return dbConnection;
 }
