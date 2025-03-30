@@ -1,9 +1,7 @@
-
 import { connectToDatabase } from './mongodb';
 import User from '@/models/User';
 import bcrypt from 'bcryptjs';
 
-// Simulate the server-side API behavior on the client for the demo
 class APIHandler {
   // Initialize API routes
   initializeRoutes() {
@@ -21,7 +19,7 @@ class APIHandler {
           const body = JSON.parse(init.body.toString());
           const { email, password, role } = body;
           
-          // Find user in database - ensure we get a single document
+          // Find user in database
           const user = await User.findOne({ email, role }).exec();
           
           if (!user) {
@@ -31,9 +29,10 @@ class APIHandler {
             );
           }
           
-          // Now TypeScript knows user is a single document, not an array
-          // Check password (in real app, use bcrypt.compare)
-          if (user.password !== password) {  // Simplified for demo, should use bcrypt
+          // Compare hashed passwords
+          const isPasswordValid = await bcrypt.compare(password, user.password);
+          
+          if (!isPasswordValid) {
             return new Response(
               JSON.stringify({ message: 'Invalid credentials' }),
               { status: 401, headers: { 'Content-Type': 'application/json' } }
@@ -46,11 +45,7 @@ class APIHandler {
               _id: user._id,
               name: user.name,
               email: user.email,
-              role: user.role,
-              department: user.department,
-              studentClass: user.studentClass,
-              batch: user.batch,
-              rollNo: user.rollNo
+              role: user.role
             }),
             { status: 200, headers: { 'Content-Type': 'application/json' } }
           );
@@ -78,7 +73,7 @@ class APIHandler {
           const body = JSON.parse(init.body.toString());
           const { email, password, role } = body;
           
-          // Check if user already exists - ensure we get a single document
+          // Check if user already exists
           const existingUser = await User.findOne({ email }).exec();
           
           if (existingUser) {
@@ -88,11 +83,14 @@ class APIHandler {
             );
           }
           
-          // Create new user
-          // In a real app, hash the password before saving
+          // Hash password before saving
+          const saltRounds = 10;
+          const hashedPassword = await bcrypt.hash(password, saltRounds);
+          
+          // Create new user with hashed password
           const newUser = new User({
             ...body,
-            password: password // In production, use bcrypt.hash
+            password: hashedPassword
           });
           
           await newUser.save();
@@ -103,11 +101,7 @@ class APIHandler {
               _id: newUser._id,
               name: newUser.name,
               email: newUser.email,
-              role: newUser.role,
-              department: newUser.department,
-              studentClass: newUser.studentClass,
-              batch: newUser.batch,
-              rollNo: newUser.rollNo
+              role: newUser.role
             }),
             { status: 201, headers: { 'Content-Type': 'application/json' } }
           );
