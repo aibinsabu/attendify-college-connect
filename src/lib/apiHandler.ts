@@ -21,10 +21,8 @@ class APIHandler {
           const body = JSON.parse(init.body.toString());
           const { email, password, role } = body;
           
-          // Find user in database
-          // Use a different approach to fix the TypeScript error
-          const userQuery = User.findOne({ email, role });
-          const user = await userQuery.lean().exec();
+          // Find user in database - ensure we get a single document
+          const user = await User.findOne({ email, role }).exec();
           
           if (!user) {
             return new Response(
@@ -33,6 +31,7 @@ class APIHandler {
             );
           }
           
+          // Now TypeScript knows user is a single document, not an array
           // Check password (in real app, use bcrypt.compare)
           if (user.password !== password) {  // Simplified for demo, should use bcrypt
             return new Response(
@@ -79,9 +78,8 @@ class APIHandler {
           const body = JSON.parse(init.body.toString());
           const { email, password, role } = body;
           
-          // Check if user already exists
-          const userQuery = User.findOne({ email });
-          const existingUser = await userQuery.lean().exec();
+          // Check if user already exists - ensure we get a single document
+          const existingUser = await User.findOne({ email }).exec();
           
           if (existingUser) {
             return new Response(
