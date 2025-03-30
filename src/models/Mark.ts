@@ -52,7 +52,14 @@ const markSchema = new Schema({
 markSchema.index({ student: 1, subject: 1, exam: 1 }, { unique: true });
 
 // Create and export the Mark model
-const Mark: Model<any> = models.Mark || model('Mark', markSchema);
+let Mark: Model<any>;
+try {
+  // Check if the model is already defined
+  Mark = models.Mark || model('Mark', markSchema);
+} catch (error) {
+  // If there's an error, create the model directly
+  Mark = model('Mark', markSchema);
+}
 
 export { Mark };
 export default Mark;

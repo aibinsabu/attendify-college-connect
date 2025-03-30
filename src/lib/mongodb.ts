@@ -16,14 +16,13 @@ export async function connectToDatabase() {
 
   try {
     // Attempt to connect to MongoDB using the correct import
-    await connect(MONGODB_URI, {
+    const mongoose = await connect(MONGODB_URI, {
       // These options help with connection stability
       serverSelectionTimeoutMS: 5000,
-      retryWrites: true
     });
     
     // Get the default connection
-    dbConnection = connection;
+    dbConnection = mongoose.connection;
     
     // Set up connection event handlers
     dbConnection.on('connected', () => {
@@ -42,6 +41,8 @@ export async function connectToDatabase() {
       isConnected = false;
     });
     
+    console.log('✅ New database connection established');
+    isConnected = true;
     return dbConnection;
   } catch (error) {
     console.error('❌ Failed to connect to database:', error);

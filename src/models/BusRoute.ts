@@ -60,7 +60,14 @@ const busRouteSchema = new Schema({
 });
 
 // Create and export the BusRoute model
-const BusRoute: Model<any> = models.BusRoute || model('BusRoute', busRouteSchema);
+let BusRoute: Model<any>;
+try {
+  // Check if the model is already defined
+  BusRoute = models.BusRoute || model('BusRoute', busRouteSchema);
+} catch (error) {
+  // If there's an error, create the model directly
+  BusRoute = model('BusRoute', busRouteSchema);
+}
 
 export { BusRoute };
 export default BusRoute;

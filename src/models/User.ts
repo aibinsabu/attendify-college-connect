@@ -62,8 +62,15 @@ const userSchema = new Schema({
   }
 });
 
-// Create the User model
-const User: Model<any> = models.User || model('User', userSchema);
+// Create the User model - safely handle the models object which might be undefined in a browser context
+let User: Model<any>;
+try {
+  // Check if the model is already defined
+  User = models.User || model('User', userSchema);
+} catch (error) {
+  // If there's an error (likely because models is undefined), create the model directly
+  User = model('User', userSchema);
+}
 
 export { User };
 export default User;

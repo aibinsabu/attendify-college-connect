@@ -63,7 +63,14 @@ attendanceSchema.statics.calculateAttendancePercentage = async function(studentI
 };
 
 // Create and export the Attendance model
-const Attendance: Model<any> = models.Attendance || model('Attendance', attendanceSchema);
+let Attendance: Model<any>;
+try {
+  // Check if the model is already defined
+  Attendance = models.Attendance || model('Attendance', attendanceSchema);
+} catch (error) {
+  // If there's an error, create the model directly
+  Attendance = model('Attendance', attendanceSchema);
+}
 
 export { Attendance };
 export default Attendance;
