@@ -63,13 +63,20 @@ attendanceSchema.statics.calculateAttendancePercentage = async function(studentI
 };
 
 // Create and export the Attendance model
-// Fix the model creation to prevent errors
 let Attendance;
 try {
-  // Check if the model already exists to prevent recompilation error
-  Attendance = mongoose.model('Attendance');
+  // Check if the model already exists
+  if (mongoose.models && mongoose.models.Attendance) {
+    Attendance = mongoose.models.Attendance;
+  } else if (mongoose.connection.models && mongoose.connection.models.Attendance) {
+    Attendance = mongoose.connection.models.Attendance;
+  } else {
+    // Model doesn't exist yet, so create it
+    Attendance = mongoose.connection.model('Attendance', attendanceSchema);
+  }
 } catch (error) {
-  // Model doesn't exist yet, so create it
+  console.error("Error creating Attendance model:", error);
+  // Fallback - create the model but it might not be connected to the DB
   Attendance = mongoose.model('Attendance', attendanceSchema);
 }
 

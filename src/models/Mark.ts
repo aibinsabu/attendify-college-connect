@@ -54,10 +54,18 @@ markSchema.index({ student: 1, subject: 1, exam: 1 }, { unique: true });
 // Create and export the Mark model using the safe approach
 let Mark;
 try {
-  // Check if the model already exists to prevent recompilation error
-  Mark = mongoose.model('Mark');
+  // Check if the model already exists
+  if (mongoose.models && mongoose.models.Mark) {
+    Mark = mongoose.models.Mark;
+  } else if (mongoose.connection.models && mongoose.connection.models.Mark) {
+    Mark = mongoose.connection.models.Mark;
+  } else {
+    // Model doesn't exist yet, so create it
+    Mark = mongoose.connection.model('Mark', markSchema);
+  }
 } catch (error) {
-  // Model doesn't exist yet, so create it
+  console.error("Error creating Mark model:", error);
+  // Fallback - create the model but it might not be connected to the DB
   Mark = mongoose.model('Mark', markSchema);
 }
 

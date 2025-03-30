@@ -14,22 +14,26 @@ export async function connectToDatabase() {
   }
 
   try {
-    const db = await mongoose.connect(MONGODB_URI);
+    // Fix: Use createConnection or connection.openUri instead of connect directly
+    const db = await mongoose.createConnection(MONGODB_URI).asPromise();
     
     isConnected = true;
     console.log('New database connection established');
     
     // Set up connection event handlers
-    mongoose.connection.on('error', (err) => {
+    db.on('error', (err) => {
       console.error('MongoDB connection error:', err);
       toast.error('Database connection error');
       isConnected = false;
     });
     
-    mongoose.connection.on('disconnected', () => {
+    db.on('disconnected', () => {
       console.log('MongoDB disconnected');
       isConnected = false;
     });
+    
+    // Set the default connection
+    mongoose.connection = db;
     
     return db;
   } catch (error) {

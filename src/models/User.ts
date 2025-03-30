@@ -62,13 +62,20 @@ const userSchema = new mongoose.Schema({
 });
 
 // Create the User model
-// Fix: Using a safer approach to prevent model redefinition errors
 let User;
 try {
-  // Check if the model already exists to prevent recompilation error
-  User = mongoose.model('User');
+  // Check if the model already exists
+  if (mongoose.models && mongoose.models.User) {
+    User = mongoose.models.User;
+  } else if (mongoose.connection.models && mongoose.connection.models.User) {
+    User = mongoose.connection.models.User;
+  } else {
+    // Model doesn't exist yet, so create it
+    User = mongoose.connection.model('User', userSchema);
+  }
 } catch (error) {
-  // Model doesn't exist yet, so create it
+  console.error("Error creating User model:", error);
+  // Fallback - create the model but it might not be connected to the DB
   User = mongoose.model('User', userSchema);
 }
 
