@@ -1,4 +1,4 @@
-# Welcome to your Lovable project
+# Welcome to your College ID Management System 
 
 ## Project info
 
@@ -7,12 +7,6 @@
 ## How can I edit this code?
 
 There are several ways of editing your application.
-
-**Use Lovable**
-
-Simply visit the [Lovable Project](https://lovable.dev/projects/15bf00ee-a0a9-46f8-9614-915adf5839f0) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
 
 **Use your preferred IDE**
 
