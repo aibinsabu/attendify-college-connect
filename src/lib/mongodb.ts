@@ -2,7 +2,7 @@
 import mongoose from 'mongoose';
 import { toast } from 'sonner';
 
-const MONGODB_URI = 'mongodb://localhost:27017/college_management';
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/college_management';
 
 // Global variable to track connection status
 let isConnected = false;
@@ -16,7 +16,7 @@ export async function connectToDatabase() {
 
   try {
     // Connect to MongoDB using mongoose
-    const conn = await mongoose.connect(MONGODB_URI);
+    await mongoose.connect(MONGODB_URI);
     
     // Get the default connection
     dbConnection = mongoose.connection;
