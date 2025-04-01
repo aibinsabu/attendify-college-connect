@@ -1,3 +1,4 @@
+
 import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
@@ -8,15 +9,12 @@ import mockDb from './lib/mockDb.ts';
 // Initialize the API handler (simulated API endpoints)
 apiHandler.initializeRoutes();
 
-// Initialize database connection - use mock DB in browser environment
-if (typeof window !== 'undefined') {
-  console.log('🌐 Running in browser environment, using mock database');
-  mockDb.connect().catch(console.error);
-} else {
-  // This won't run in the browser, but we keep it for clarity
-  console.log('🖥️ Running in Node.js environment, using real MongoDB');
-  connectToDatabase().catch(console.error);
-}
+// Initialize database connection - always use mock DB in browser environment
+console.log('🌐 Running in browser environment, using mock database');
+mockDb.connect().catch(console.error);
+
+// The server-side MongoDB connection would be handled in a Node.js environment
+// which is not relevant for this browser-based application
 
 const rootElement = document.getElementById("root");
 if (!rootElement) throw new Error('Root element not found');

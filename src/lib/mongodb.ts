@@ -2,13 +2,23 @@
 import mongoose from 'mongoose';
 import { toast } from 'sonner';
 
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/college_management';
+// In browser environments, we won't have process.env available
+// so we'll set a fallback value that won't be used (the mockDb will be used instead)
+const MONGODB_URI = typeof window === 'undefined' 
+  ? (process.env.MONGODB_URI || 'mongodb://localhost:27017/college_management')
+  : 'mongodb://localhost:27017/college_management';
 
 // Global variable to track connection status
 let isConnected = false;
 let dbConnection: mongoose.Connection | null = null;
 
 export async function connectToDatabase() {
+  // In browser environments, we shouldn't try to connect to MongoDB directly
+  if (typeof window !== 'undefined') {
+    console.log('✅ Browser environment detected, skipping real MongoDB connection');
+    return null;
+  }
+
   if (isConnected && dbConnection) {
     console.log('✅ Using existing database connection');
     return dbConnection;
