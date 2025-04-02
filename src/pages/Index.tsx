@@ -1,8 +1,6 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import DatabaseStatus from '@/components/DatabaseStatus';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, BookOpen, GraduationCap, Bus } from 'lucide-react';
 
@@ -20,7 +18,6 @@ const HomePage = () => {
           <h2 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-primary/90 to-purple-500 bg-clip-text text-transparent">
             Welcome to College Management System
           </h2>
-          <DatabaseStatus />
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
