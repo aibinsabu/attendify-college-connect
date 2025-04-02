@@ -10,11 +10,9 @@ import mockDb from './lib/mockDb.ts';
 apiHandler.initializeRoutes();
 
 // Initialize database connection - always use mock DB in browser environment
+// For server-side, the actual MongoDB connection is handled by the Express server
 console.log('🌐 Running in browser environment, using mock database');
 mockDb.connect().catch(console.error);
-
-// The server-side MongoDB connection would be handled in a Node.js environment
-// which is not relevant for this browser-based application
 
 const rootElement = document.getElementById("root");
 if (!rootElement) throw new Error('Root element not found');
