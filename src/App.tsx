@@ -1,8 +1,8 @@
 
+import React from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 
@@ -22,10 +22,10 @@ import BusStaffLogin from "./pages/busstaff/BusStaffLogin";
 import BusStaffSignup from "./pages/busstaff/BusStaffSignup";
 import BusStaffDashboard from "./pages/busstaff/BusStaffDashboard";
 
-const queryClient = new QueryClient();
+// Temporarily remove React Query to fix the initialization issue
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
+function App() {
+  return (
     <TooltipProvider>
       <Toaster />
       <Sonner />
@@ -60,7 +60,7 @@ const App = () => (
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
-  </QueryClientProvider>
-);
+  );
+}
 
 export default App;
