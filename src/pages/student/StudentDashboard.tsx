@@ -25,6 +25,40 @@ const StudentDashboard = () => {
   const [qrDialogOpen, setQrDialogOpen] = useState(false);
   const { user } = useAuth();
   
+  // Mock data for demonstration when real data is loading or not available
+  const mockStudentData = {
+    id: user?.id || 'STUDENT001',
+    name: user?.name || 'Student Name',
+    email: user?.email || 'student@example.com',
+    rollNo: user?.rollNo || 'CS-2022-001',
+    class: user?.studentClass || 'Computer Science',
+    batch: user?.batch || '2022-2026',
+    attendancePercentage: 85,
+    busRoute: {
+      number: 'Route A',
+      stops: [
+        { name: 'Central Station', time: '8:00 AM', isNext: false },
+        { name: 'North Residence', time: '8:15 AM', isNext: true },
+        { name: 'Library', time: '8:25 AM', isNext: false },
+        { name: 'Science Block', time: '8:35 AM', isNext: false },
+        { name: 'Sports Complex', time: '8:45 AM', isNext: false }
+      ]
+    },
+    marks: [
+      { subject: 'Introduction to Programming', midterm: 86, assignment: 92, final: 88, total: 89 },
+      { subject: 'Data Structures', midterm: 78, assignment: 85, final: 82, total: 82 },
+      { subject: 'Computer Networks', midterm: 72, assignment: 76, final: 79, total: 76 }
+    ],
+    latestAttendance: [
+      { date: '2023-04-03', subject: 'Introduction to Programming', status: 'present' },
+      { date: '2023-04-03', subject: 'Data Structures', status: 'present' },
+      { date: '2023-04-03', subject: 'Computer Networks', status: 'absent' },
+      { date: '2023-04-02', subject: 'Introduction to Programming', status: 'present' },
+      { date: '2023-04-02', subject: 'Data Structures', status: 'present' },
+      { date: '2023-04-02', subject: 'Computer Networks', status: 'present' },
+    ]
+  };
+  
   // Fetch attendance data
   const { data: attendanceData, isLoading: attendanceLoading } = useQuery({
     queryKey: ['attendance', user?.id],
@@ -66,40 +100,6 @@ const StudentDashboard = () => {
       return routes[0]; // Just use the first route for now
     },
   });
-  
-  // Mock data for demonstration when real data is loading or not available
-  const mockStudentData = {
-    id: user?.id || 'STUDENT001',
-    name: user?.name || 'Student Name',
-    email: user?.email || 'student@example.com',
-    rollNo: user?.rollNo || 'CS-2022-001',
-    class: user?.studentClass || 'Computer Science',
-    batch: user?.batch || '2022-2026',
-    attendancePercentage: 85,
-    busRoute: {
-      number: 'Route A',
-      stops: [
-        { name: 'Central Station', time: '8:00 AM', isNext: false },
-        { name: 'North Residence', time: '8:15 AM', isNext: true },
-        { name: 'Library', time: '8:25 AM', isNext: false },
-        { name: 'Science Block', time: '8:35 AM', isNext: false },
-        { name: 'Sports Complex', time: '8:45 AM', isNext: false }
-      ]
-    },
-    marks: [
-      { subject: 'Introduction to Programming', midterm: 86, assignment: 92, final: 88, total: 89 },
-      { subject: 'Data Structures', midterm: 78, assignment: 85, final: 82, total: 82 },
-      { subject: 'Computer Networks', midterm: 72, assignment: 76, final: 79, total: 76 }
-    ],
-    latestAttendance: [
-      { date: '2023-04-03', subject: 'Introduction to Programming', status: 'present' },
-      { date: '2023-04-03', subject: 'Data Structures', status: 'present' },
-      { date: '2023-04-03', subject: 'Computer Networks', status: 'absent' },
-      { date: '2023-04-02', subject: 'Introduction to Programming', status: 'present' },
-      { date: '2023-04-02', subject: 'Data Structures', status: 'present' },
-      { date: '2023-04-02', subject: 'Computer Networks', status: 'present' },
-    ]
-  };
 
   // Calculate attendance percentage based on actual data or use mock
   const calculateAttendancePercentage = () => {
@@ -174,7 +174,7 @@ const StudentDashboard = () => {
     } : mockStudentData.busRoute,
     latestAttendance: attendanceData?.length > 0 ? 
       attendanceData.slice(0, 10).map(record => ({
-        date: new Date(record.date).toISOString().split('T')[0] || new Date(record.markedAt).toISOString().split('T')[0],
+        date: new Date(record.date || record.markedAt).toISOString().split('T')[0],
         subject: record.subject,
         status: record.status
       })) : mockStudentData.latestAttendance
