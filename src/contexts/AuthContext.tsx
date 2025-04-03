@@ -2,8 +2,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { connectToDatabase } from '@/lib/mongodb';
-import bcrypt from 'bcryptjs';
+import mockDb from '@/lib/mockDb';
 
 export type UserRole = 'admin' | 'faculty' | 'student' | 'busstaff';
 
@@ -54,18 +53,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
 
-  // Initialize MongoDB connection
+  // Initialize the mock database connection
   useEffect(() => {
-    const initMongoDB = async () => {
+    const initDatabase = async () => {
       try {
-        await connectToDatabase();
+        await mockDb.connect();
       } catch (error) {
-        console.error('Failed to connect to MongoDB:', error);
+        console.error('Failed to connect to mock database:', error);
         toast.error('Database connection failed');
       }
     };
     
-    initMongoDB();
+    initDatabase();
   }, []);
 
   // Check for existing session on load
@@ -86,13 +85,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(true);
     
     try {
-      await connectToDatabase();
-      
-      // In a production app, we would make a fetch call to a secure API endpoint
-      // For demo purposes, we're doing a simplified version
-      
       // Simulate user lookup and password verification
-      // In real production code, this would be a server-side API call
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -135,13 +128,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsLoading(true);
     
     try {
-      await connectToDatabase();
-      
-      // In a production app, we would make a fetch call to a secure API endpoint
-      // For demo purposes, we're doing a simplified version
-      
       // Simulate user creation
-      // In real production code, this would be a server-side API call
       const response = await fetch('/api/auth/signup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

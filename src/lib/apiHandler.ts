@@ -1,5 +1,5 @@
-import { connectToDatabase } from './mongodb';
-import User from '@/models/User';
+
+import mockDb from './mockDb';
 import bcrypt from 'bcryptjs';
 
 class APIHandler {
@@ -15,12 +15,13 @@ class APIHandler {
     window.fetch = async function(input, init) {
       if (typeof input === 'string' && input === '/api/auth/login' && init?.method === 'POST') {
         try {
-          await connectToDatabase();
+          await mockDb.connect();
           const body = JSON.parse(init.body.toString());
           const { email, password, role } = body;
           
           // Find user in database
-          const user = await User.findOne({ email, role }).exec();
+          const users = mockDb.getCollection('users');
+          const user = users.find(u => u.email === email && u.role === role);
           
           if (!user) {
             return new Response(
@@ -45,7 +46,11 @@ class APIHandler {
               _id: user._id,
               name: user.name,
               email: user.email,
-              role: user.role
+              role: user.role,
+              department: user.department,
+              studentClass: user.studentClass,
+              batch: user.batch,
+              rollNo: user.rollNo
             }),
             { status: 200, headers: { 'Content-Type': 'application/json' } }
           );
@@ -69,12 +74,13 @@ class APIHandler {
     window.fetch = async function(input, init) {
       if (typeof input === 'string' && input === '/api/auth/signup' && init?.method === 'POST') {
         try {
-          await connectToDatabase();
+          await mockDb.connect();
           const body = JSON.parse(init.body.toString());
           const { email, password, role } = body;
           
           // Check if user already exists
-          const existingUser = await User.findOne({ email }).exec();
+          const users = mockDb.getCollection('users');
+          const existingUser = users.find(u => u.email === email);
           
           if (existingUser) {
             return new Response(
@@ -88,20 +94,27 @@ class APIHandler {
           const hashedPassword = await bcrypt.hash(password, saltRounds);
           
           // Create new user with hashed password
-          const newUser = new User({
+          const newUser = {
             ...body,
-            password: hashedPassword
-          });
+            password: hashedPassword,
+            createdAt: new Date(),
+            updatedAt: new Date()
+          };
           
-          await newUser.save();
+          // Add to mock collection
+          const savedUser = mockDb.addToCollection('users', newUser);
           
           // Return created user data
           return new Response(
             JSON.stringify({
-              _id: newUser._id,
-              name: newUser.name,
-              email: newUser.email,
-              role: newUser.role
+              _id: savedUser._id,
+              name: savedUser.name,
+              email: savedUser.email,
+              role: savedUser.role,
+              department: savedUser.department,
+              studentClass: savedUser.studentClass,
+              batch: savedUser.batch,
+              rollNo: savedUser.rollNo
             }),
             { status: 201, headers: { 'Content-Type': 'application/json' } }
           );
