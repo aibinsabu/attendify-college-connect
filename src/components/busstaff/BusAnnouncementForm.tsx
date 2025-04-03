@@ -29,7 +29,10 @@ const BusAnnouncementForm: React.FC<AnnouncementFormProps> = ({ routeId, onSucce
   });
   
   const onSubmit = async (data: any) => {
-    if (!user?._id) {
+    // Get user ID safely - check for both id and _id properties
+    const userId = user?._id || user?.id;
+    
+    if (!userId) {
       toast.error('You must be logged in to create announcements');
       return;
     }
@@ -41,7 +44,7 @@ const BusAnnouncementForm: React.FC<AnnouncementFormProps> = ({ routeId, onSucce
         title: data.title,
         message: data.message,
         priority: data.priority,
-        createdBy: user._id
+        createdBy: userId
       });
       
       toast.success('Announcement created successfully');

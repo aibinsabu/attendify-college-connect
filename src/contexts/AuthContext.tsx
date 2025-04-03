@@ -8,6 +8,7 @@ export type UserRole = 'admin' | 'faculty' | 'student' | 'busstaff';
 
 interface User {
   id: string;
+  _id?: string; // Add _id property to fix BusAnnouncementForm errors
   name: string;
   email: string;
   role: UserRole;

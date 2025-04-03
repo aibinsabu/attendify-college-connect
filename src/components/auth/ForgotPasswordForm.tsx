@@ -12,6 +12,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import authAPI from '@/services/authApi';
+import { UserRole } from '@/models/User';
 
 // Define form schema
 const formSchema = z.object({
@@ -21,12 +22,14 @@ const formSchema = z.object({
   }),
 });
 
+type FormValues = z.infer<typeof formSchema>;
+
 const ForgotPasswordForm: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
   const navigate = useNavigate();
   
-  const { register, handleSubmit, formState: { errors }, watch } = useForm({
+  const { register, handleSubmit, formState: { errors }, watch } = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       email: '',
@@ -36,7 +39,7 @@ const ForgotPasswordForm: React.FC = () => {
   
   const selectedRole = watch('role');
   
-  const onSubmit = async (data: z.infer<typeof formSchema>) => {
+  const onSubmit = async (data: FormValues) => {
     try {
       setIsSubmitting(true);
       
