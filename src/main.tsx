@@ -16,10 +16,8 @@ mockDb.connect().catch(console.error);
 const rootElement = document.getElementById("root");
 if (!rootElement) throw new Error('Root element not found');
 
-// Create root with explicit React import
 const root = createRoot(rootElement);
 
-// Render the app
 root.render(
   <React.StrictMode>
     <App />
