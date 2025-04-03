@@ -46,7 +46,14 @@ const userSchema = new mongoose.Schema({
   idCardNumber: {
     type: String,
     unique: true,
-    sparse: true
+    sparse: true // Only enforces uniqueness for documents where the field exists
+  },
+  passwordResetToken: String,
+  passwordResetExpires: Date,
+  lastLogin: Date,
+  active: {
+    type: Boolean,
+    default: true
   },
   createdAt: {
     type: Date,
@@ -56,6 +63,17 @@ const userSchema = new mongoose.Schema({
     type: Date,
     default: Date.now
   }
+});
+
+// Create indexes for faster queries
+userSchema.index({ email: 1, role: 1 });
+userSchema.index({ role: 1 });
+userSchema.index({ studentClass: 1, batch: 1 });
+
+// Pre-save middleware to update the 'updatedAt' field
+userSchema.pre('save', function(next) {
+  this.updatedAt = new Date();
+  next();
 });
 
 module.exports = mongoose.model('User', userSchema);

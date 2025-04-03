@@ -1,11 +1,30 @@
 
-import { Schema, model, models, Model } from 'mongoose';
+import { Schema, model, models, Model, Document } from 'mongoose';
 import { getDbConnection } from '@/lib/mongodb';
 
 export type UserRole = 'admin' | 'faculty' | 'student' | 'busstaff';
 
+export interface IUser extends Document {
+  name: string;
+  email: string;
+  password: string;
+  role: UserRole;
+  department?: string;
+  studentClass?: string;
+  batch?: string;
+  rollNo?: string;
+  dob?: Date;
+  idCardNumber?: string;
+  passwordResetToken?: string;
+  passwordResetExpires?: Date;
+  lastLogin?: Date;
+  active: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
 // Define the user schema
-const userSchema = new Schema({
+const userSchema = new Schema<IUser>({
   name: {
     type: String,
     required: true,
@@ -29,23 +48,23 @@ const userSchema = new Schema({
   },
   department: {
     type: String,
-    required: function() { return this.role === 'faculty'; }
+    required: function(this: IUser) { return this.role === 'faculty'; }
   },
   studentClass: {
     type: String,
-    required: function() { return this.role === 'student'; }
+    required: function(this: IUser) { return this.role === 'student'; }
   },
   batch: {
     type: String,
-    required: function() { return this.role === 'student'; }
+    required: function(this: IUser) { return this.role === 'student'; }
   },
   rollNo: {
     type: String,
-    required: function() { return this.role === 'student'; }
+    required: function(this: IUser) { return this.role === 'student'; }
   },
   dob: {
     type: Date,
-    required: function() { return this.role === 'student'; }
+    required: function(this: IUser) { return this.role === 'student'; }
   },
   idCardNumber: {
     type: String,
@@ -74,14 +93,20 @@ userSchema.index({ email: 1, role: 1 });
 userSchema.index({ role: 1 });
 userSchema.index({ studentClass: 1, batch: 1 });
 
+// Pre-save middleware to update the 'updatedAt' field
+userSchema.pre('save', function(next) {
+  this.updatedAt = new Date();
+  next();
+});
+
 // Create the User model - safely handle the models object which might be undefined in a browser context
-let User: Model<any>;
+let User: Model<IUser>;
 try {
   // Check if the model is already defined
-  User = models.User || model('User', userSchema);
+  User = models.User || model<IUser>('User', userSchema);
 } catch (error) {
   // If there's an error (likely because models is undefined), create the model directly
-  User = model('User', userSchema);
+  User = model<IUser>('User', userSchema);
 }
 
 export { User };

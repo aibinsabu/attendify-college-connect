@@ -1,8 +1,45 @@
 
-import { Schema, model, models, Model } from 'mongoose';
+import { Schema, model, models, Model, Document } from 'mongoose';
+
+interface IStop {
+  name: string;
+  time: string;
+  coordinates: {
+    lat: number;
+    lng: number;
+  };
+}
+
+interface IAnnouncement {
+  title: string;
+  message: string;
+  priority: 'low' | 'medium' | 'high';
+  createdBy: Schema.Types.ObjectId;
+  createdAt: Date;
+  read: Schema.Types.ObjectId[];
+}
+
+export interface IBusRoute extends Document {
+  routeName: string;
+  routeNumber: string;
+  driverName: string;
+  driverContact: string;
+  startLocation: string;
+  endLocation: string;
+  stops: IStop[];
+  active: boolean;
+  busCapacity: number;
+  assignedStudents: Schema.Types.ObjectId[];
+  departureTime: string;
+  arrivalTime: string;
+  operationDays: string[];
+  announcements: IAnnouncement[];
+  createdAt: Date;
+  updatedAt: Date;
+}
 
 // Define the schema for route stop
-const stopSchema = new Schema({
+const stopSchema = new Schema<IStop>({
   name: String,
   time: String,
   coordinates: {
@@ -12,7 +49,7 @@ const stopSchema = new Schema({
 });
 
 // Define the schema for route announcement
-const announcementSchema = new Schema({
+const announcementSchema = new Schema<IAnnouncement>({
   title: {
     type: String,
     required: true
@@ -42,7 +79,7 @@ const announcementSchema = new Schema({
 });
 
 // Define the bus route schema
-const busRouteSchema = new Schema({
+const busRouteSchema = new Schema<IBusRoute>({
   routeName: {
     type: String,
     required: true,
@@ -107,14 +144,24 @@ const busRouteSchema = new Schema({
   }
 });
 
+// Index for faster queries
+busRouteSchema.index({ routeNumber: 1 }, { unique: true });
+busRouteSchema.index({ active: 1 });
+
+// Pre-save middleware to update the 'updatedAt' field
+busRouteSchema.pre('save', function(next) {
+  this.updatedAt = new Date();
+  next();
+});
+
 // Create and export the BusRoute model
-let BusRoute: Model<any>;
+let BusRoute: Model<IBusRoute>;
 try {
   // Check if the model is already defined
-  BusRoute = models.BusRoute || model('BusRoute', busRouteSchema);
+  BusRoute = models.BusRoute || model<IBusRoute>('BusRoute', busRouteSchema);
 } catch (error) {
   // If there's an error, create the model directly
-  BusRoute = model('BusRoute', busRouteSchema);
+  BusRoute = model<IBusRoute>('BusRoute', busRouteSchema);
 }
 
 export { BusRoute };

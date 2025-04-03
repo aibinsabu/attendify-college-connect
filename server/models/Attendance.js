@@ -61,4 +61,10 @@ attendanceSchema.statics.calculateAttendancePercentage = async function(studentI
   return (presentClasses / totalClasses) * 100;
 };
 
+// Pre-save middleware to update the 'markedAt' field
+attendanceSchema.pre('save', function(next) {
+  this.markedAt = new Date();
+  next();
+});
+
 module.exports = mongoose.model('Attendance', attendanceSchema);

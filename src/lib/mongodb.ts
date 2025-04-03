@@ -4,17 +4,26 @@ import { toast } from 'sonner';
 import getDatabaseConfig from '@/config/database';
 
 // Get database configuration
-const { mongodbUri } = getDatabaseConfig();
+const { mongodbUri, useMockDatabase } = getDatabaseConfig();
 
 // Global variables to track connection status
 let isConnected = false;
 let connectionPromise: Promise<mongoose.Connection> | null = null;
 let dbConnection: mongoose.Connection | null = null;
+let connectionRetries = 0;
+const MAX_RETRIES = 3;
 
 /**
- * Connect to MongoDB database with connection pooling support
+ * Connect to MongoDB database with connection pooling and retry logic
  */
 export async function connectToDatabase(): Promise<mongoose.Connection> {
+  // If using mock database, return null since we don't need a real connection
+  if (useMockDatabase) {
+    console.log('🚫 Using mock database, no MongoDB connection needed');
+    isConnected = true;
+    return null as any;
+  }
+
   // Return existing connection if already established
   if (isConnected && dbConnection) {
     console.log('✅ Using existing database connection');
@@ -29,9 +38,16 @@ export async function connectToDatabase(): Promise<mongoose.Connection> {
 
   try {
     console.log('🔄 Establishing new MongoDB connection...');
+    
     // Create a new connection promise
     connectionPromise = new Promise(async (resolve, reject) => {
       try {
+        // Hide sensitive credentials in logs
+        const displayUri = mongodbUri.includes('@') 
+          ? mongodbUri.replace(/\/\/(.+?):(.+?)@/, '//******:******@') 
+          : mongodbUri;
+        console.log(`🔄 Connecting to MongoDB at ${displayUri}`);
+        
         // Set mongoose options for better connection handling
         mongoose.set('strictQuery', false);
         
@@ -53,11 +69,12 @@ export async function connectToDatabase(): Promise<mongoose.Connection> {
           console.log('✅ Successfully connected to MongoDB');
           isConnected = true;
           toast.success('Connected to MongoDB');
+          connectionRetries = 0;
         });
         
         dbConnection.on('error', (err) => {
           console.error('❌ MongoDB connection error:', err);
-          toast.error('Database connection failed');
+          toast.error('Database connection error');
           isConnected = false;
         });
         
@@ -65,6 +82,19 @@ export async function connectToDatabase(): Promise<mongoose.Connection> {
           console.log('❌ MongoDB disconnected');
           isConnected = false;
           connectionPromise = null; // Reset the promise on disconnect
+          
+          // Auto-reconnect with backoff if disconnected
+          if (connectionRetries < MAX_RETRIES) {
+            const timeout = Math.pow(2, connectionRetries) * 1000;
+            console.log(`🔄 Attempting reconnection in ${timeout/1000} seconds...`);
+            
+            setTimeout(() => {
+              connectionRetries++;
+              connectToDatabase().catch(err => {
+                console.error('❌ Reconnection attempt failed:', err);
+              });
+            }, timeout);
+          }
         });
         
         console.log('✅ New database connection established');
@@ -73,7 +103,24 @@ export async function connectToDatabase(): Promise<mongoose.Connection> {
       } catch (error) {
         console.error('❌ Failed to connect to MongoDB:', error);
         connectionPromise = null;
-        reject(error);
+        
+        // Implement retry logic with exponential backoff
+        if (connectionRetries < MAX_RETRIES) {
+          const timeout = Math.pow(2, connectionRetries) * 1000;
+          console.log(`🔄 Retrying connection in ${timeout/1000} seconds...`);
+          
+          setTimeout(async () => {
+            connectionRetries++;
+            try {
+              const conn = await connectToDatabase();
+              resolve(conn);
+            } catch (err) {
+              reject(err);
+            }
+          }, timeout);
+        } else {
+          reject(error);
+        }
       }
     });
     
@@ -105,14 +152,43 @@ export function getDbConnection() {
  * If in browser, returns null, otherwise connects to MongoDB
  */
 export function useMongoDBorMock() {
-  // If in browser, use mock database
-  if (typeof window !== 'undefined') {
-    console.log('🌐 Browser environment detected, using mock database');
+  const { useMockDatabase } = getDatabaseConfig();
+  
+  // If using mock database, return null
+  if (useMockDatabase) {
+    console.log('🌐 Using mock database');
     return null;
   }
   
-  // If server-side, use real MongoDB
+  // If client-side and not using mock DB, warn about potential issues
+  if (typeof window !== 'undefined' && !useMockDatabase) {
+    console.warn('⚠️ Attempting to use MongoDB in browser environment');
+    return null;
+  }
+  
+  // If server-side or explicitly allowed in browser, use real MongoDB
   return connectToDatabase();
+}
+
+/**
+ * Check if the database is healthy
+ */
+export async function checkDatabaseHealth() {
+  if (useMockDatabase) {
+    return { status: 'mock', message: 'Using mock database' };
+  }
+  
+  if (!isConnected || !dbConnection) {
+    return { status: 'disconnected', message: 'Not connected to database' };
+  }
+  
+  try {
+    // Simple query to check if database is responsive
+    await mongoose.connection.db.admin().ping();
+    return { status: 'healthy', message: 'Database is responsive' };
+  } catch (error) {
+    return { status: 'unhealthy', message: error.message };
+  }
 }
 
 /**
@@ -120,6 +196,11 @@ export function useMongoDBorMock() {
  * This ensures optimal query performance
  */
 export async function createIndexes() {
+  if (useMockDatabase) {
+    console.log('Using mock database, skipping index creation');
+    return true;
+  }
+  
   try {
     const conn = await connectToDatabase();
     console.log('Creating database indexes...');
