@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import DashboardLayout from '@/components/DashboardLayout';
@@ -66,9 +67,43 @@ const StudentDashboard = () => {
     },
   });
   
-  // Calculate attendance percentage
+  // Mock data for demonstration when real data is loading or not available
+  const mockStudentData = {
+    id: user?.id || 'STUDENT001',
+    name: user?.name || 'Student Name',
+    email: user?.email || 'student@example.com',
+    rollNo: user?.rollNo || 'CS-2022-001',
+    class: user?.studentClass || 'Computer Science',
+    batch: user?.batch || '2022-2026',
+    attendancePercentage: 85,
+    busRoute: {
+      number: 'Route A',
+      stops: [
+        { name: 'Central Station', time: '8:00 AM', isNext: false },
+        { name: 'North Residence', time: '8:15 AM', isNext: true },
+        { name: 'Library', time: '8:25 AM', isNext: false },
+        { name: 'Science Block', time: '8:35 AM', isNext: false },
+        { name: 'Sports Complex', time: '8:45 AM', isNext: false }
+      ]
+    },
+    marks: [
+      { subject: 'Introduction to Programming', midterm: 86, assignment: 92, final: 88, total: 89 },
+      { subject: 'Data Structures', midterm: 78, assignment: 85, final: 82, total: 82 },
+      { subject: 'Computer Networks', midterm: 72, assignment: 76, final: 79, total: 76 }
+    ],
+    latestAttendance: [
+      { date: '2023-04-03', subject: 'Introduction to Programming', status: 'present' },
+      { date: '2023-04-03', subject: 'Data Structures', status: 'present' },
+      { date: '2023-04-03', subject: 'Computer Networks', status: 'absent' },
+      { date: '2023-04-02', subject: 'Introduction to Programming', status: 'present' },
+      { date: '2023-04-02', subject: 'Data Structures', status: 'present' },
+      { date: '2023-04-02', subject: 'Computer Networks', status: 'present' },
+    ]
+  };
+
+  // Calculate attendance percentage based on actual data or use mock
   const calculateAttendancePercentage = () => {
-    if (!attendanceData || attendanceData.length === 0) return 0;
+    if (!attendanceData || attendanceData.length === 0) return mockStudentData.attendancePercentage;
     
     const totalRecords = attendanceData.length;
     const presentRecords = attendanceData.filter(record => record.status === 'present').length;
@@ -114,6 +149,36 @@ const StudentDashboard = () => {
       onClick: () => setCurrentTab('busroute')
     },
   ];
+
+  // Use data from API or fallback to mock data
+  const studentData = {
+    ...mockStudentData,
+    id: user?.id || mockStudentData.id,
+    name: user?.name || mockStudentData.name,
+    email: user?.email || mockStudentData.email,
+    rollNo: user?.rollNo || mockStudentData.rollNo,
+    class: user?.studentClass || mockStudentData.class,
+    batch: user?.batch || mockStudentData.batch,
+    attendancePercentage,
+    // Merge in real data as it becomes available
+    marks: marksData?.length > 0 ? marksData.map(mark => ({
+      subject: mark.subject,
+      midterm: mark.midterm || 0,
+      assignment: mark.assignment || 0,
+      final: mark.final || 0,
+      total: mark.percentage || 0
+    })) : mockStudentData.marks,
+    busRoute: busRouteData ? {
+      number: busRouteData.routeNumber || busRouteData.routeName,
+      stops: busRouteData.stops || mockStudentData.busRoute.stops
+    } : mockStudentData.busRoute,
+    latestAttendance: attendanceData?.length > 0 ? 
+      attendanceData.slice(0, 10).map(record => ({
+        date: new Date(record.date).toISOString().split('T')[0] || new Date(record.markedAt).toISOString().split('T')[0],
+        subject: record.subject,
+        status: record.status
+      })) : mockStudentData.latestAttendance
+  };
 
   const renderDashboard = () => (
     <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
