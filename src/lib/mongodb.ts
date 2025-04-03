@@ -2,23 +2,15 @@
 import mongoose from 'mongoose';
 import { toast } from 'sonner';
 
-// In browser environments, we won't have process.env available
-// so we'll set a fallback value that won't be used (the mockDb will be used instead)
-const MONGODB_URI = typeof window === 'undefined' 
-  ? (process.env.MONGODB_URI || 'mongodb://localhost:27017/college_management')
-  : 'mongodb://localhost:27017/college_management';
+// MongoDB connection URI - reads from environment or uses default
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/college_management';
 
 // Global variable to track connection status
 let isConnected = false;
 let dbConnection: mongoose.Connection | null = null;
 
 export async function connectToDatabase() {
-  // In browser environments, we shouldn't try to connect to MongoDB directly
-  if (typeof window !== 'undefined') {
-    console.log('✅ Browser environment detected, skipping real MongoDB connection');
-    return null;
-  }
-
+  // If we're already connected, return the existing connection
   if (isConnected && dbConnection) {
     console.log('✅ Using existing database connection');
     return dbConnection;
@@ -26,10 +18,10 @@ export async function connectToDatabase() {
 
   try {
     // Connect to MongoDB using mongoose
-    await mongoose.connect(MONGODB_URI);
+    const mongooseInstance = await mongoose.connect(MONGODB_URI);
     
     // Get the default connection
-    dbConnection = mongoose.connection;
+    dbConnection = mongooseInstance.connection;
     
     // Set up connection event handlers
     dbConnection.on('connected', () => {
@@ -64,4 +56,16 @@ export function getConnectionStatus() {
 
 export function getDbConnection() {
   return dbConnection;
+}
+
+// Function to use in browser environments for backward compatibility
+export function useMongoDBorMock() {
+  // If in browser, use mock database
+  if (typeof window !== 'undefined') {
+    console.log('🌐 Browser environment detected, using mock database');
+    return null;
+  }
+  
+  // If server-side, use real MongoDB
+  return connectToDatabase();
 }

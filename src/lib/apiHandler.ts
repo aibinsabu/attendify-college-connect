@@ -6,6 +6,7 @@ class APIHandler {
     this.setupLoginEndpoint();
     this.setupSignupEndpoint();
     this.setupAuthStatusEndpoint();
+    this.setupDashboardDataEndpoints();
   }
   
   setupLoginEndpoint() {
@@ -139,6 +140,162 @@ class APIHandler {
           );
         } catch (error) {
           console.error('Auth status error:', error);
+          return new Response(
+            JSON.stringify({ message: 'Server error' }),
+            { status: 500, headers: { 'Content-Type': 'application/json' } }
+          );
+        }
+      }
+      
+      return originalFetch.call(window, input, init);
+    };
+  }
+  
+  setupDashboardDataEndpoints() {
+    const originalFetch = window.fetch;
+    
+    window.fetch = async function(input, init) {
+      if (typeof input === 'string' && input.startsWith('/api/attendance/student/')) {
+        try {
+          await mockDb.connect();
+          const studentId = input.split('/').pop();
+          
+          const attendance = mockDb.getCollection('attendance');
+          if (attendance.length === 0 || !attendance.some(a => a.student === studentId)) {
+            const subjects = ['Introduction to Programming', 'Data Structures', 'Computer Networks'];
+            const statuses = ['present', 'absent', 'late'];
+            
+            for (let i = 0; i < 15; i++) {
+              const date = new Date();
+              date.setDate(date.getDate() - i);
+              
+              subjects.forEach(subject => {
+                const status = statuses[Math.floor(Math.random() * statuses.length)];
+                mockDb.addToCollection('attendance', {
+                  student: studentId,
+                  subject,
+                  date: date.toISOString().split('T')[0],
+                  status,
+                  class: 'Computer Science',
+                  markedVia: 'manual',
+                  markedAt: new Date()
+                });
+              });
+            }
+          }
+          
+          const studentAttendance = mockDb.findInCollection('attendance', { student: studentId });
+          
+          return new Response(
+            JSON.stringify(studentAttendance),
+            { status: 200, headers: { 'Content-Type': 'application/json' } }
+          );
+        } catch (error) {
+          console.error('Error fetching attendance:', error);
+          return new Response(
+            JSON.stringify({ message: 'Server error' }),
+            { status: 500, headers: { 'Content-Type': 'application/json' } }
+          );
+        }
+      }
+      
+      if (typeof input === 'string' && input.startsWith('/api/marks/student/')) {
+        try {
+          await mockDb.connect();
+          const studentId = input.split('/').pop();
+          
+          const marks = mockDb.getCollection('marks');
+          if (marks.length === 0 || !marks.some(m => m.student === studentId)) {
+            const subjects = ['Introduction to Programming', 'Data Structures', 'Computer Networks'];
+            
+            subjects.forEach(subject => {
+              const midterm = Math.floor(Math.random() * 30) + 60;
+              const assignment = Math.floor(Math.random() * 20) + 70;
+              const final = Math.floor(Math.random() * 25) + 65;
+              
+              const totalMarks = 100;
+              const marks = Math.round((midterm + assignment + final) / 3);
+              const percentage = (marks / totalMarks) * 100;
+              
+              let grade = '';
+              if (percentage >= 90) grade = 'A+';
+              else if (percentage >= 80) grade = 'A';
+              else if (percentage >= 70) grade = 'B+';
+              else if (percentage >= 60) grade = 'B';
+              else if (percentage >= 50) grade = 'C';
+              else if (percentage >= 40) grade = 'D';
+              else grade = 'F';
+              
+              mockDb.addToCollection('marks', {
+                student: studentId,
+                subject,
+                midterm,
+                assignment,
+                final,
+                marks,
+                totalMarks,
+                percentage,
+                grade,
+                exam: 'Semester 1',
+                remarks: '',
+                addedBy: 'system',
+                createdAt: new Date(),
+                updatedAt: new Date()
+              });
+            });
+          }
+          
+          const studentMarks = mockDb.findInCollection('marks', { student: studentId });
+          
+          return new Response(
+            JSON.stringify(studentMarks),
+            { status: 200, headers: { 'Content-Type': 'application/json' } }
+          );
+        } catch (error) {
+          console.error('Error fetching marks:', error);
+          return new Response(
+            JSON.stringify({ message: 'Server error' }),
+            { status: 500, headers: { 'Content-Type': 'application/json' } }
+          );
+        }
+      }
+      
+      if (typeof input === 'string' && input === '/api/busroutes') {
+        try {
+          await mockDb.connect();
+          
+          const busRoutes = mockDb.getCollection('busroutes');
+          if (busRoutes.length === 0) {
+            mockDb.addToCollection('busroutes', {
+              routeName: 'Campus Main Route',
+              routeNumber: 'Route A',
+              driverName: 'John Smith',
+              driverContact: '555-1234',
+              startLocation: 'Central Station',
+              endLocation: 'University Campus',
+              stops: [
+                { name: 'Central Station', time: '8:00 AM', coordinates: { lat: 40.7128, lng: -74.0060 } },
+                { name: 'North Residence', time: '8:15 AM', coordinates: { lat: 40.7200, lng: -74.0100 } },
+                { name: 'Library', time: '8:25 AM', coordinates: { lat: 40.7250, lng: -74.0150 } },
+                { name: 'Science Block', time: '8:35 AM', coordinates: { lat: 40.7300, lng: -74.0200 } },
+                { name: 'Sports Complex', time: '8:45 AM', coordinates: { lat: 40.7350, lng: -74.0250 } }
+              ],
+              active: true,
+              busCapacity: 40,
+              assignedStudents: [],
+              createdAt: new Date(),
+              updatedAt: new Date()
+            });
+          }
+          
+          const routes = mockDb.getCollection('busroutes');
+          
+          return new Response(
+            JSON.stringify(routes),
+            { status: 200, headers: { 'Content-Type': 'application/json' } }
+          );
+        } catch (error) {
+          console.error('Error fetching bus routes:', error);
           return new Response(
             JSON.stringify({ message: 'Server error' }),
             { status: 500, headers: { 'Content-Type': 'application/json' } }

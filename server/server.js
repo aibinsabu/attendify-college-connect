@@ -1,8 +1,8 @@
 
 const express = require('express');
 const cors = require('cors');
-const mongoose = require('mongoose');
 const dotenv = require('dotenv');
+const { connectToDatabase } = require('./lib/mongodb');
 
 // Load environment variables
 dotenv.config();
@@ -15,10 +15,8 @@ const PORT = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
-// MongoDB Connection
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/college_management';
-
-mongoose.connect(MONGODB_URI)
+// Connect to MongoDB
+connectToDatabase()
   .then(() => {
     console.log('✅ Connected to MongoDB');
   })

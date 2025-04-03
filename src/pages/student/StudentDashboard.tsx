@@ -1,8 +1,9 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import DashboardLayout from '@/components/DashboardLayout';
 import AttendanceScanner from '@/components/AttendanceScanner';
+import { useAuth } from '@/contexts/AuthContext';
+import { useQuery } from '@tanstack/react-query';
 import { 
   Calendar, ClipboardCheck, LayoutDashboard, CheckCircle, XCircle, 
   BookOpen, Map, BarChart3, Bus
@@ -18,43 +19,65 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 
-// Mock data
-const studentData = {
-  id: 'S001',
-  name: 'Alex Thompson',
-  rollNo: 'CS22001',
-  class: 'Computer Science',
-  batch: '2022-2026',
-  email: 'alex.t@example.edu',
-  attendancePercentage: 85,
-  latestAttendance: [
-    { date: '2023-09-05', status: 'present', subject: 'Introduction to Programming' },
-    { date: '2023-09-05', status: 'present', subject: 'Data Structures' },
-    { date: '2023-09-05', status: 'absent', subject: 'Computer Networks' },
-    { date: '2023-09-04', status: 'present', subject: 'Introduction to Programming' },
-    { date: '2023-09-04', status: 'present', subject: 'Data Structures' },
-  ],
-  marks: [
-    { subject: 'Introduction to Programming', midterm: 72, assignment: 85, final: 78, total: 78 },
-    { subject: 'Data Structures', midterm: 68, assignment: 90, final: 75, total: 76 },
-    { subject: 'Computer Networks', midterm: 80, assignment: 88, final: 82, total: 83 },
-  ],
-  busRoute: {
-    number: 'Route A',
-    stops: [
-      { name: 'Central Campus', time: '8:00 AM', isNext: true },
-      { name: 'North Residence', time: '8:15 AM' },
-      { name: 'Library', time: '8:25 AM' },
-      { name: 'Science Block', time: '8:35 AM' },
-      { name: 'Sports Complex', time: '8:45 AM' }
-    ]
-  }
-};
-
 const StudentDashboard = () => {
   const [currentTab, setCurrentTab] = useState('dashboard');
   const [qrDialogOpen, setQrDialogOpen] = useState(false);
-
+  const { user } = useAuth();
+  
+  // Fetch attendance data
+  const { data: attendanceData, isLoading: attendanceLoading } = useQuery({
+    queryKey: ['attendance', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      const response = await fetch(`/api/attendance/student/${user.id}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch attendance data');
+      }
+      return response.json();
+    },
+    enabled: !!user?.id,
+    refetchInterval: 30000, // Refresh every 30 seconds
+  });
+  
+  // Fetch marks data
+  const { data: marksData, isLoading: marksLoading } = useQuery({
+    queryKey: ['marks', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      const response = await fetch(`/api/marks/student/${user.id}`);
+      if (!response.ok) {
+        throw new Error('Failed to fetch marks data');
+      }
+      return response.json();
+    },
+    enabled: !!user?.id,
+  });
+  
+  // Fetch bus route data
+  const { data: busRouteData, isLoading: busRouteLoading } = useQuery({
+    queryKey: ['busroute'],
+    queryFn: async () => {
+      const response = await fetch('/api/busroutes');
+      if (!response.ok) {
+        throw new Error('Failed to fetch bus route data');
+      }
+      const routes = await response.json();
+      return routes[0]; // Just use the first route for now
+    },
+  });
+  
+  // Calculate attendance percentage
+  const calculateAttendancePercentage = () => {
+    if (!attendanceData || attendanceData.length === 0) return 0;
+    
+    const totalRecords = attendanceData.length;
+    const presentRecords = attendanceData.filter(record => record.status === 'present').length;
+    
+    return Math.round((presentRecords / totalRecords) * 100);
+  };
+  
+  const attendancePercentage = calculateAttendancePercentage();
+  
   const handleAttendanceMarked = (studentId: string, method: 'scan' | 'manual', evidence?: string) => {
     toast.success('Attendance marked successfully');
   };
@@ -477,7 +500,6 @@ const StudentDashboard = () => {
     </Card>
   );
 
-  // QR Code Dialog
   const renderQrDialog = () => (
     <Dialog open={qrDialogOpen} onOpenChange={setQrDialogOpen}>
       <DialogContent className="max-w-md">
@@ -544,17 +566,28 @@ const StudentDashboard = () => {
       currentTab={currentTab}
       navigation={navigation}
     >
-      {currentTab === 'dashboard' && renderDashboard()}
-      {currentTab === 'attendance' && renderAttendance()}
-      {currentTab === 'marks' && renderMarks()}
-      {currentTab === 'busroute' && renderBusRoute()}
+      {/* Show loading state when data is being fetched */}
+      {(attendanceLoading || marksLoading || busRouteLoading) && (
+        <div className="flex justify-center items-center h-40">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+        </div>
+      )}
+      
+      {/* Show content when data is loaded */}
+      {!attendanceLoading && !marksLoading && !busRouteLoading && (
+        <>
+          {currentTab === 'dashboard' && renderDashboard()}
+          {currentTab === 'attendance' && renderAttendance()}
+          {currentTab === 'marks' && renderMarks()}
+          {currentTab === 'busroute' && renderBusRoute()}
+        </>
+      )}
       
       {renderQrDialog()}
     </DashboardLayout>
   );
 };
 
-// Helper function to calculate grade
 const getGrade = (marks: number) => {
   if (marks >= 90) return 'A+';
   if (marks >= 80) return 'A';
