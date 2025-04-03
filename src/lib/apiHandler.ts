@@ -1,12 +1,11 @@
-
 import mockDb from './mockDb';
 import bcrypt from 'bcryptjs';
 
 class APIHandler {
-  // Initialize API routes
   initializeRoutes() {
     this.setupLoginEndpoint();
     this.setupSignupEndpoint();
+    this.setupAuthStatusEndpoint();
   }
   
   setupLoginEndpoint() {
@@ -19,7 +18,6 @@ class APIHandler {
           const body = JSON.parse(init.body.toString());
           const { email, password, role } = body;
           
-          // Find user in database
           const users = mockDb.getCollection('users');
           const user = users.find(u => u.email === email && u.role === role);
           
@@ -30,7 +28,6 @@ class APIHandler {
             );
           }
           
-          // Compare hashed passwords
           const isPasswordValid = await bcrypt.compare(password, user.password);
           
           if (!isPasswordValid) {
@@ -40,7 +37,6 @@ class APIHandler {
             );
           }
           
-          // Return user data
           return new Response(
             JSON.stringify({
               _id: user._id,
@@ -63,7 +59,6 @@ class APIHandler {
         }
       }
       
-      // Pass through other requests to the original fetch
       return originalFetch.call(window, input, init);
     };
   }
@@ -78,7 +73,6 @@ class APIHandler {
           const body = JSON.parse(init.body.toString());
           const { email, password, role } = body;
           
-          // Check if user already exists
           const users = mockDb.getCollection('users');
           const existingUser = users.find(u => u.email === email);
           
@@ -89,11 +83,9 @@ class APIHandler {
             );
           }
           
-          // Hash password before saving
           const saltRounds = 10;
           const hashedPassword = await bcrypt.hash(password, saltRounds);
           
-          // Create new user with hashed password
           const newUser = {
             ...body,
             password: hashedPassword,
@@ -101,10 +93,8 @@ class APIHandler {
             updatedAt: new Date()
           };
           
-          // Add to mock collection
           const savedUser = mockDb.addToCollection('users', newUser);
           
-          // Return created user data
           return new Response(
             JSON.stringify({
               _id: savedUser._id,
@@ -127,7 +117,35 @@ class APIHandler {
         }
       }
       
-      // Pass through other requests to the original fetch
+      return originalFetch.call(window, input, init);
+    };
+  }
+  
+  setupAuthStatusEndpoint() {
+    const originalFetch = window.fetch;
+    
+    window.fetch = async function(input, init) {
+      if (typeof input === 'string' && input === '/api/auth/status') {
+        try {
+          await mockDb.connect();
+          const currentUser = localStorage.getItem('currentUser');
+          
+          return new Response(
+            JSON.stringify({
+              isAuthenticated: !!currentUser,
+              user: currentUser ? JSON.parse(currentUser) : null
+            }),
+            { status: 200, headers: { 'Content-Type': 'application/json' } }
+          );
+        } catch (error) {
+          console.error('Auth status error:', error);
+          return new Response(
+            JSON.stringify({ message: 'Server error' }),
+            { status: 500, headers: { 'Content-Type': 'application/json' } }
+          );
+        }
+      }
+      
       return originalFetch.call(window, input, init);
     };
   }
