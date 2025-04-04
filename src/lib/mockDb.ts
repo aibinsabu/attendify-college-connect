@@ -144,8 +144,8 @@ class MockDatabase {
     return MockDatabase.instance;
   }
   
-  private loadFromStorage(): void {
-    if (!this.localStorage) return;
+  private loadFromStorage(): boolean {
+    if (!this.localStorage) return false;
     
     try {
       let hasData = false;
