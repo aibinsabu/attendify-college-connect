@@ -1,178 +1,110 @@
 
-import mockDb from '@/lib/mockDb';
-import bcrypt from 'bcryptjs';
+import { API } from '@/services/api';
 import { toast } from 'sonner';
-import { connectToDatabase } from '@/lib/mongodb';
-import User from '@/models/User';
+import mockDb from '@/lib/mockDb';
 import getDatabaseConfig from '@/config/database';
+import { v4 as uuidv4 } from 'uuid';
 
 const { useMockDatabase } = getDatabaseConfig();
 
-// Authentication related API functions
-export const authAPI = {
+// Auth related API functions
+const authAPI = {
   // Login user
   login: async (email: string, password: string, role: string) => {
     try {
-      if (useMockDatabase) {
-        const users = mockDb.getCollection('users');
-        const user = users.find(u => u.email === email && u.role === role);
-        
-        if (!user) {
-          throw new Error('User not found');
-        }
-        
-        const isPasswordValid = await bcrypt.compare(password, user.password);
-        
-        if (!isPasswordValid) {
-          throw new Error('Invalid credentials');
-        }
-        
-        // Return user without password
-        const { password: _, ...userWithoutPassword } = user;
-        return userWithoutPassword;
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ email, password, role })
+      });
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to login');
       }
       
-      await connectToDatabase();
-      const user = await User.findOne({ email, role });
-      
-      if (!user) {
-        throw new Error('User not found');
-      }
-      
-      const isPasswordValid = await bcrypt.compare(password, user.password);
-      
-      if (!isPasswordValid) {
-        throw new Error('Invalid credentials');
-      }
-      
-      // Convert to plain object and remove password
-      const userObj = user.toObject();
-      delete userObj.password;
-      
-      return userObj;
+      const userData = await response.json();
+      return userData;
     } catch (error) {
       console.error('Login error:', error);
       throw error;
     }
   },
   
-  // Register new user
-  register: async (userData: any) => {
+  // Register user
+  signup: async (userData: any) => {
     try {
-      if (useMockDatabase) {
-        const users = mockDb.getCollection('users');
-        const existingUser = users.find(u => u.email === userData.email);
-        
-        if (existingUser) {
-          throw new Error('User already exists');
-        }
-        
-        // Hash password
-        const saltRounds = 10;
-        const hashedPassword = await bcrypt.hash(userData.password, saltRounds);
-        
-        // Create user with hashed password
-        const newUser = {
-          ...userData,
-          password: hashedPassword,
-          _id: `mock_${Date.now()}`,
-          createdAt: new Date(),
-          updatedAt: new Date()
-        };
-        
-        mockDb.addToCollection('users', newUser);
-        
-        // Return user without password
-        const { password, ...userWithoutPassword } = newUser;
-        return userWithoutPassword;
-      }
-      
-      await connectToDatabase();
-      
-      // Check if user already exists
-      const existingUser = await User.findOne({ email: userData.email });
-      
-      if (existingUser) {
-        throw new Error('User already exists');
-      }
-      
-      // Hash password
-      const saltRounds = 10;
-      const hashedPassword = await bcrypt.hash(userData.password, saltRounds);
-      
-      // Create new user with hashed password
-      const newUser = new User({
-        ...userData,
-        password: hashedPassword
+      const response = await fetch('/api/auth/signup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(userData)
       });
       
-      const savedUser = await newUser.save();
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to signup');
+      }
       
-      // Convert to plain object and remove password
-      const userObj = savedUser.toObject();
-      delete userObj.password;
-      
-      return userObj;
+      const user = await response.json();
+      return user;
     } catch (error) {
-      console.error('Registration error:', error);
+      console.error('Signup error:', error);
       throw error;
     }
   },
   
-  // Reset password request
+  // Request password reset
   requestPasswordReset: async (email: string, role: string) => {
     try {
+      // In a real app, this would call an API endpoint
       if (useMockDatabase) {
+        // Mock implementation
         const users = mockDb.getCollection('users');
         const user = users.find(u => u.email === email && u.role === role);
         
         if (!user) {
-          throw new Error('User not found');
+          console.log('No user found with this email and role');
+          // We still return success to avoid leaking info about registered emails
+          return true;
         }
         
-        // In mock mode, simply generate a reset token and store it
-        const resetToken = Math.random().toString(36).substring(2, 15);
-        const resetExpires = new Date();
-        resetExpires.setHours(resetExpires.getHours() + 1); // Token expires in 1 hour
+        // Generate a reset token
+        const resetToken = uuidv4();
+        const expiryDate = new Date();
+        expiryDate.setHours(expiryDate.getHours() + 1); // Token expires after 1 hour
         
+        // Update user with reset token and expiry date
         mockDb.updateInCollection('users', user._id, {
           passwordResetToken: resetToken,
-          passwordResetExpires: resetExpires,
-          updatedAt: new Date()
+          passwordResetExpires: expiryDate
         });
         
-        // In a real app, we would send an email with the reset link
-        // For mock purposes, we'll just return the token
-        toast.success('Password reset email sent (simulated in development)');
-        console.log('DEVELOPMENT MODE: Password reset token:', resetToken);
+        // In a real app, this would send an email
+        console.log(`Password reset token for ${email}: ${resetToken}`);
+        console.log(`Reset link would be: /reset-password/${resetToken}`);
         
-        return { success: true, message: 'Password reset email sent' };
+        return true;
+      } else {
+        // Real API implementation
+        const response = await fetch('/api/auth/forgot-password', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ email, role })
+        });
+        
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.message || 'Failed to request password reset');
+        }
+        
+        return true;
       }
-      
-      await connectToDatabase();
-      
-      const user = await User.findOne({ email, role });
-      
-      if (!user) {
-        throw new Error('User not found');
-      }
-      
-      // Generate reset token
-      const resetToken = Math.random().toString(36).substring(2, 15);
-      const resetExpires = new Date();
-      resetExpires.setHours(resetExpires.getHours() + 1); // Token expires in 1 hour
-      
-      // Store token and expiry in user document
-      user.passwordResetToken = resetToken;
-      user.passwordResetExpires = resetExpires;
-      await user.save();
-      
-      // In a real app, we would send an email with the reset link
-      // For development, log the token to console
-      toast.success('Password reset email sent (simulated)');
-      console.log('DEVELOPMENT MODE: Password reset token:', resetToken);
-      
-      return { success: true, message: 'Password reset email sent' };
     } catch (error) {
       console.error('Password reset request error:', error);
       throw error;
@@ -182,55 +114,46 @@ export const authAPI = {
   // Reset password with token
   resetPassword: async (token: string, newPassword: string) => {
     try {
+      // In a real app, this would call an API endpoint
       if (useMockDatabase) {
+        // Mock implementation
         const users = mockDb.getCollection('users');
         const user = users.find(u => 
           u.passwordResetToken === token && 
-          u.passwordResetExpires > new Date()
+          u.passwordResetExpires && 
+          new Date(u.passwordResetExpires) > new Date()
         );
         
         if (!user) {
           throw new Error('Invalid or expired reset token');
         }
         
-        // Hash new password
-        const saltRounds = 10;
-        const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
-        
-        // Update user password and clear reset token
+        // Update user with new password and remove reset token
         mockDb.updateInCollection('users', user._id, {
-          password: hashedPassword,
+          password: newPassword, // In a real app this would be hashed
           passwordResetToken: null,
           passwordResetExpires: null,
           updatedAt: new Date()
         });
         
-        return { success: true, message: 'Password reset successful' };
+        return true;
+      } else {
+        // Real API implementation
+        const response = await fetch('/api/auth/reset-password', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ token, password: newPassword })
+        });
+        
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.message || 'Failed to reset password');
+        }
+        
+        return true;
       }
-      
-      await connectToDatabase();
-      
-      // Find user with valid reset token
-      const user = await User.findOne({
-        passwordResetToken: token,
-        passwordResetExpires: { $gt: new Date() }
-      });
-      
-      if (!user) {
-        throw new Error('Invalid or expired reset token');
-      }
-      
-      // Hash new password
-      const saltRounds = 10;
-      const hashedPassword = await bcrypt.hash(newPassword, saltRounds);
-      
-      // Update user password and clear reset token
-      user.password = hashedPassword;
-      user.passwordResetToken = undefined;
-      user.passwordResetExpires = undefined;
-      await user.save();
-      
-      return { success: true, message: 'Password reset successful' };
     } catch (error) {
       console.error('Password reset error:', error);
       throw error;
@@ -238,5 +161,4 @@ export const authAPI = {
   }
 };
 
-// Export default API
 export default authAPI;
