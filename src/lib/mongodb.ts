@@ -1,4 +1,3 @@
-
 import mongoose from 'mongoose';
 import { toast } from 'sonner';
 import getDatabaseConfig from '@/config/database';
@@ -48,10 +47,7 @@ export async function connectToDatabase(): Promise<mongoose.Connection> {
           : mongodbUri;
         console.log(`🔄 Connecting to MongoDB at ${displayUri}`);
         
-        // Set mongoose options for better connection handling
-        mongoose.set('strictQuery', false);
-        
-        // Connect to MongoDB
+        // Connect to MongoDB - removed mongoose.set which is not available in this version
         const mongooseInstance = await mongoose.connect(mongodbUri, {
           maxPoolSize: 10, // Maintain up to 10 socket connections
           minPoolSize: 2,  // Maintain at least 2 socket connections

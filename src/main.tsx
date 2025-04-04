@@ -10,13 +10,19 @@ import getDatabaseConfig from './config/database.ts';
 import { toast } from 'sonner';
 
 // Determine which database to use
-const { useMockDatabase } = getDatabaseConfig();
+const { useMockDatabase, mongodbUri } = getDatabaseConfig();
+
+// Log environment variables
+console.log('Environment settings:');
+console.log('VITE_USE_MOCK_DB:', import.meta.env.VITE_USE_MOCK_DB);
+console.log('Using mock database:', useMockDatabase);
+console.log('MongoDB URI:', mongodbUri ? mongodbUri.replace(/\/\/(.+?):(.+?)@/, '//******:******@') : 'Not configured');
 
 // Initialize the appropriate database
 async function initializeDatabase() {
   try {
     if (useMockDatabase) {
-      console.log('🌐 Running in browser environment, using mock database');
+      console.log('🌐 Running with mock database');
       await mockDb.connect();
       toast.info('Connected to mock database');
     } else {
@@ -27,7 +33,9 @@ async function initializeDatabase() {
     }
   } catch (error) {
     console.error('❌ Database initialization error:', error);
-    toast.error('Failed to connect to database');
+    toast.error('Failed to connect to database. Using mock database as fallback.');
+    // Fall back to mock database if MongoDB connection fails
+    await mockDb.connect();
   }
 }
 
