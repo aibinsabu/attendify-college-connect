@@ -27,15 +27,21 @@ async function initializeDatabase() {
       toast.info('Connected to mock database');
     } else {
       console.log('🌐 Connecting to real MongoDB database');
-      await connectToDatabase();
-      await createIndexes();
-      toast.success('Connected to MongoDB database');
+      try {
+        await connectToDatabase();
+        await createIndexes();
+        toast.success('Connected to MongoDB database');
+      } catch (error) {
+        console.error('❌ MongoDB connection error:', error);
+        toast.error('Failed to connect to MongoDB. Using mock database as fallback.');
+        
+        // Fall back to mock database if MongoDB connection fails
+        await mockDb.connect();
+      }
     }
   } catch (error) {
     console.error('❌ Database initialization error:', error);
-    toast.error('Failed to connect to database. Using mock database as fallback.');
-    // Fall back to mock database if MongoDB connection fails
-    await mockDb.connect();
+    toast.error('Database initialization failed.');
   }
 }
 

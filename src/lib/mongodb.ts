@@ -1,3 +1,4 @@
+
 import mongoose from 'mongoose';
 import { toast } from 'sonner';
 import getDatabaseConfig from '@/config/database';
@@ -7,26 +8,25 @@ const { mongodbUri, useMockDatabase } = getDatabaseConfig();
 
 // Global variables to track connection status
 let isConnected = false;
-let connectionPromise: Promise<mongoose.Connection> | null = null;
-let dbConnection: mongoose.Connection | null = null;
+let connectionPromise: Promise<typeof mongoose> | null = null;
 let connectionRetries = 0;
 const MAX_RETRIES = 3;
 
 /**
  * Connect to MongoDB database with connection pooling and retry logic
  */
-export async function connectToDatabase(): Promise<mongoose.Connection> {
+export async function connectToDatabase(): Promise<typeof mongoose> {
   // If using mock database, return null since we don't need a real connection
   if (useMockDatabase) {
     console.log('🚫 Using mock database, no MongoDB connection needed');
     isConnected = true;
-    return null as any;
+    return mongoose;
   }
 
   // Return existing connection if already established
-  if (isConnected && dbConnection) {
+  if (isConnected) {
     console.log('✅ Using existing database connection');
-    return dbConnection;
+    return mongoose;
   }
 
   // Return in-progress connection attempt if one exists
@@ -47,34 +47,24 @@ export async function connectToDatabase(): Promise<mongoose.Connection> {
           : mongodbUri;
         console.log(`🔄 Connecting to MongoDB at ${displayUri}`);
         
-        // Connect to MongoDB - removed mongoose.set which is not available in this version
-        const mongooseInstance = await mongoose.connect(mongodbUri, {
-          maxPoolSize: 10, // Maintain up to 10 socket connections
-          minPoolSize: 2,  // Maintain at least 2 socket connections
-          socketTimeoutMS: 45000, // Close sockets after 45 seconds of inactivity
-          connectTimeoutMS: 10000, // Give up initial connection after 10 seconds
-          retryWrites: true,
-          serverSelectionTimeoutMS: 10000 // Timeout server selection after 10 seconds
-        });
-        
-        // Get the default connection
-        dbConnection = mongooseInstance.connection;
+        // Connect to MongoDB using the correct syntax for mongoose v8+
+        await mongoose.connect(mongodbUri);
         
         // Set up connection event handlers
-        dbConnection.on('connected', () => {
+        mongoose.connection.on('connected', () => {
           console.log('✅ Successfully connected to MongoDB');
           isConnected = true;
           toast.success('Connected to MongoDB');
           connectionRetries = 0;
         });
         
-        dbConnection.on('error', (err) => {
+        mongoose.connection.on('error', (err) => {
           console.error('❌ MongoDB connection error:', err);
           toast.error('Database connection error');
           isConnected = false;
         });
         
-        dbConnection.on('disconnected', () => {
+        mongoose.connection.on('disconnected', () => {
           console.log('❌ MongoDB disconnected');
           isConnected = false;
           connectionPromise = null; // Reset the promise on disconnect
@@ -95,7 +85,7 @@ export async function connectToDatabase(): Promise<mongoose.Connection> {
         
         console.log('✅ New database connection established');
         isConnected = true;
-        resolve(dbConnection);
+        resolve(mongoose);
       } catch (error) {
         console.error('❌ Failed to connect to MongoDB:', error);
         connectionPromise = null;
@@ -140,30 +130,7 @@ export function getConnectionStatus() {
  * Get the current database connection
  */
 export function getDbConnection() {
-  return dbConnection;
-}
-
-/**
- * Function to use in browser environments for backward compatibility
- * If in browser, returns null, otherwise connects to MongoDB
- */
-export function useMongoDBorMock() {
-  const { useMockDatabase } = getDatabaseConfig();
-  
-  // If using mock database, return null
-  if (useMockDatabase) {
-    console.log('🌐 Using mock database');
-    return null;
-  }
-  
-  // If client-side and not using mock DB, warn about potential issues
-  if (typeof window !== 'undefined' && !useMockDatabase) {
-    console.warn('⚠️ Attempting to use MongoDB in browser environment');
-    return null;
-  }
-  
-  // If server-side or explicitly allowed in browser, use real MongoDB
-  return connectToDatabase();
+  return mongoose.connection;
 }
 
 /**
@@ -174,7 +141,7 @@ export async function checkDatabaseHealth() {
     return { status: 'mock', message: 'Using mock database' };
   }
   
-  if (!isConnected || !dbConnection) {
+  if (!isConnected) {
     return { status: 'disconnected', message: 'Not connected to database' };
   }
   
@@ -198,7 +165,7 @@ export async function createIndexes() {
   }
   
   try {
-    const conn = await connectToDatabase();
+    await connectToDatabase();
     console.log('Creating database indexes...');
     // No need to manually create indexes as they are defined in the schema
     return true;
