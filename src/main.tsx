@@ -23,6 +23,7 @@ async function initializeDatabase() {
       console.log('🌐 Connecting to real MongoDB database');
       await connectToDatabase();
       await createIndexes();
+      toast.success('Connected to MongoDB database');
     }
   } catch (error) {
     console.error('❌ Database initialization error:', error);
