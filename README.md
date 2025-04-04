@@ -61,3 +61,21 @@ Simply open [Lovable](https://lovable.dev/projects/15bf00ee-a0a9-46f8-9614-915ad
 ## I want to use a custom domain - is that possible?
 
 We don't support custom domains (yet). If you want to deploy your project under your own domain then we recommend using Netlify. Visit our docs for more details: [Custom domains](https://docs.lovable.dev/tips-tricks/custom-domain/)
+
+## Git Ignore Configuration
+
+This project uses a global Git ignore configuration to prevent modifying read-only files.
+
+To set up your local Git ignore:
+1. Copy the contents of `~/.gitignore_global` to your global Git ignore file
+2. Run: `git config --global core.excludesFile ~/.gitignore_global`
+
+### Local Development Ignores
+
+For project-specific ignores, create a `.git/info/exclude` file in your local repository:
+```bash
+# Create local excludes
+touch .git/info/exclude
+```
+
+Add any local-only ignores to this file, which won't be committed to the repository.
