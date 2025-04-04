@@ -6,9 +6,9 @@ const dotenv = require('dotenv');
 dotenv.config();
 
 // MongoDB Connection URI - use auth if credentials are provided
-const MONGODB_USER = process.env.MONGODB_USER;
-const MONGODB_PASSWORD = process.env.MONGODB_PASSWORD;
-let MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/college_management';
+const MONGODB_USER = process.env.VITE_MONGODB_USER || process.env.MONGODB_USER;
+const MONGODB_PASSWORD = process.env.VITE_MONGODB_PASSWORD || process.env.MONGODB_PASSWORD;
+let MONGODB_URI = process.env.VITE_MONGODB_URI || process.env.MONGODB_URI || 'mongodb://localhost:27017/college_management';
 
 // Add authentication if credentials are provided
 if (MONGODB_USER && MONGODB_PASSWORD) {
