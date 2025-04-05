@@ -1,4 +1,3 @@
-
 import { API } from '@/services/api';
 import { toast } from 'sonner';
 import mockDb from '@/lib/mockDb';
@@ -64,7 +63,7 @@ const authAPI = {
       if (useMockDatabase) {
         // Mock implementation
         const users = mockDb.getCollection('users');
-        const user = users.find(u => u.email === email && u.role === role);
+        const user = users.find((u) => u.email === email && u.role === role);
         
         if (!user) {
           console.log('No user found with this email and role');
@@ -118,7 +117,7 @@ const authAPI = {
       if (useMockDatabase) {
         // Mock implementation
         const users = mockDb.getCollection('users');
-        const user = users.find(u => 
+        const user = users.find((u) => 
           u.passwordResetToken === token && 
           u.passwordResetExpires && 
           new Date(u.passwordResetExpires) > new Date()
