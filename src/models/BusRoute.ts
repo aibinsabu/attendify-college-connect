@@ -147,31 +147,32 @@ const busRouteSchema = new Schema<IBusRoute>({
   }
 });
 
-// Only add indexes and middleware if we're not using mock database
+// Skip all mongoose model operations if we're in a browser environment
 // This prevents mongoose from running Node.js specific code in the browser
 let BusRoute: Model<IBusRoute>;
 
-// Skip mongoose model creation if using mock database in browser environment
-if (useMockDatabase && typeof window !== 'undefined') {
+if (typeof window !== 'undefined') {
   // Create a minimal mock model for client-side
   BusRoute = {} as Model<IBusRoute>;
 } else {
-  // Index for faster queries
-  busRouteSchema.index({ routeNumber: 1 }, { unique: true });
-  busRouteSchema.index({ active: 1 });
-
-  // Pre-save middleware to update the 'updatedAt' field
-  busRouteSchema.pre('save', function(next) {
-    this.updatedAt = new Date();
-    next();
-  });
-
   try {
+    // Only add indexes and middleware if we're in a Node.js environment
+    // Index for faster queries
+    busRouteSchema.index({ routeNumber: 1 }, { unique: true });
+    busRouteSchema.index({ active: 1 });
+
+    // Pre-save middleware to update the 'updatedAt' field
+    busRouteSchema.pre('save', function(next) {
+      this.updatedAt = new Date();
+      next();
+    });
+
     // Check if the model is already defined
     BusRoute = models.BusRoute || model<IBusRoute>('BusRoute', busRouteSchema);
   } catch (error) {
     // If there's an error, create the model directly
-    BusRoute = model<IBusRoute>('BusRoute', busRouteSchema);
+    console.error('Error initializing BusRoute model:', error);
+    BusRoute = {} as Model<IBusRoute>; // Fallback to empty model
   }
 }
 
