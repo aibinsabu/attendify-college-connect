@@ -16,9 +16,9 @@ const MAX_RETRIES = 3;
  * Connect to MongoDB database with connection pooling and retry logic
  */
 export async function connectToDatabase(): Promise<typeof mongoose> {
-  // If using mock database, return null since we don't need a real connection
-  if (useMockDatabase) {
-    console.log('🚫 Using mock database, no MongoDB connection needed');
+  // If using mock database or in browser environment, return null
+  if (useMockDatabase || typeof window !== 'undefined') {
+    console.log('🚫 Using mock database or running in browser, no MongoDB connection needed');
     isConnected = true;
     return mongoose;
   }
@@ -54,13 +54,17 @@ export async function connectToDatabase(): Promise<typeof mongoose> {
         mongoose.connection.on('connected', () => {
           console.log('✅ Successfully connected to MongoDB');
           isConnected = true;
-          toast.success('Connected to MongoDB');
+          if (typeof window !== 'undefined') {
+            toast.success('Connected to MongoDB');
+          }
           connectionRetries = 0;
         });
         
         mongoose.connection.on('error', (err) => {
           console.error('❌ MongoDB connection error:', err);
-          toast.error('Database connection error');
+          if (typeof window !== 'undefined') {
+            toast.error('Database connection error');
+          }
           isConnected = false;
         });
         
@@ -114,7 +118,9 @@ export async function connectToDatabase(): Promise<typeof mongoose> {
   } catch (error) {
     connectionPromise = null;
     console.error('❌ Failed to connect to database:', error);
-    toast.error('Could not connect to database');
+    if (typeof window !== 'undefined') {
+      toast.error('Could not connect to database');
+    }
     throw error;
   }
 }
@@ -137,8 +143,8 @@ export function getDbConnection() {
  * Check if the database is healthy
  */
 export async function checkDatabaseHealth() {
-  if (useMockDatabase) {
-    return { status: 'mock', message: 'Using mock database' };
+  if (useMockDatabase || typeof window !== 'undefined') {
+    return { status: 'mock', message: 'Using mock database or running in browser' };
   }
   
   if (!isConnected) {
@@ -159,8 +165,8 @@ export async function checkDatabaseHealth() {
  * This ensures optimal query performance
  */
 export async function createIndexes() {
-  if (useMockDatabase) {
-    console.log('Using mock database, skipping index creation');
+  if (useMockDatabase || typeof window !== 'undefined') {
+    console.log('Using mock database or running in browser, skipping index creation');
     return true;
   }
   

@@ -1,5 +1,8 @@
 
 import { Schema, model, models, Model, Document } from 'mongoose';
+import getDatabaseConfig from '@/config/database';
+
+const { useMockDatabase } = getDatabaseConfig();
 
 interface IStop {
   name: string;
@@ -144,24 +147,32 @@ const busRouteSchema = new Schema<IBusRoute>({
   }
 });
 
-// Index for faster queries
-busRouteSchema.index({ routeNumber: 1 }, { unique: true });
-busRouteSchema.index({ active: 1 });
-
-// Pre-save middleware to update the 'updatedAt' field
-busRouteSchema.pre('save', function(next) {
-  this.updatedAt = new Date();
-  next();
-});
-
-// Create and export the BusRoute model
+// Only add indexes and middleware if we're not using mock database
+// This prevents mongoose from running Node.js specific code in the browser
 let BusRoute: Model<IBusRoute>;
-try {
-  // Check if the model is already defined
-  BusRoute = models.BusRoute || model<IBusRoute>('BusRoute', busRouteSchema);
-} catch (error) {
-  // If there's an error, create the model directly
-  BusRoute = model<IBusRoute>('BusRoute', busRouteSchema);
+
+// Skip mongoose model creation if using mock database in browser environment
+if (useMockDatabase && typeof window !== 'undefined') {
+  // Create a minimal mock model for client-side
+  BusRoute = {} as Model<IBusRoute>;
+} else {
+  // Index for faster queries
+  busRouteSchema.index({ routeNumber: 1 }, { unique: true });
+  busRouteSchema.index({ active: 1 });
+
+  // Pre-save middleware to update the 'updatedAt' field
+  busRouteSchema.pre('save', function(next) {
+    this.updatedAt = new Date();
+    next();
+  });
+
+  try {
+    // Check if the model is already defined
+    BusRoute = models.BusRoute || model<IBusRoute>('BusRoute', busRouteSchema);
+  } catch (error) {
+    // If there's an error, create the model directly
+    BusRoute = model<IBusRoute>('BusRoute', busRouteSchema);
+  }
 }
 
 export { BusRoute };
